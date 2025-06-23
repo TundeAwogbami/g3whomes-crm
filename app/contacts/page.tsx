@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Plus, Phone, Mail, MapPin, Calendar, Filter, MoreHorizontal, User, Building } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { formatNaira } from "@/lib/currency"
 
 export default function ContactsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -19,52 +20,52 @@ export default function ContactsPage() {
       id: 1,
       name: "John Smith",
       email: "john.smith@email.com",
-      phone: "(555) 123-4567",
+      phone: "(234) 803-123-4567",
       type: "buyer",
       status: "active",
-      location: "New York, NY",
+      location: "Lagos, Nigeria",
       lastContact: "2 days ago",
       properties: 3,
-      value: "$450,000",
+      value: formatNaira(67500000), // ₦67.5M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 2,
       name: "Sarah Johnson",
       email: "sarah.j@email.com",
-      phone: "(555) 234-5678",
+      phone: "(234) 806-234-5678",
       type: "seller",
       status: "qualified",
-      location: "Los Angeles, CA",
+      location: "Abuja, Nigeria",
       lastContact: "1 week ago",
       properties: 1,
-      value: "$750,000",
+      value: formatNaira(112500000), // ₦112.5M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 3,
       name: "Mike Davis",
       email: "mike.davis@email.com",
-      phone: "(555) 345-6789",
+      phone: "(234) 809-345-6789",
       type: "investor",
       status: "lead",
-      location: "Chicago, IL",
+      location: "Port Harcourt, Nigeria",
       lastContact: "3 days ago",
       properties: 5,
-      value: "$1,200,000",
+      value: formatNaira(180000000), // ₦180M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 4,
       name: "Emma Wilson",
       email: "emma.wilson@email.com",
-      phone: "(555) 456-7890",
+      phone: "(234) 807-456-7890",
       type: "buyer",
       status: "active",
-      location: "Miami, FL",
+      location: "Kano, Nigeria",
       lastContact: "Today",
       properties: 2,
-      value: "$320,000",
+      value: formatNaira(48000000), // ₦48M
       avatar: "/placeholder.svg?height=40&width=40",
     },
   ]

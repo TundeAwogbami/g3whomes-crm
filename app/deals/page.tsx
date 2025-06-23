@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Plus, DollarSign, Calendar, User, Home, TrendingUp, Clock, CheckCircle } from "lucide-react"
+import { formatNaira, calculateCommission } from "@/lib/currency"
 
 export default function DealsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -17,9 +18,9 @@ export default function DealsPage() {
       id: 1,
       title: "Downtown Condo Sale",
       client: "John Smith",
-      property: "123 Oak Street",
-      value: "$450,000",
-      commission: "$13,500",
+      property: "123 Tiamiyu Savage Street",
+      value: formatNaira(67500000), // ₦67.5M
+      commission: formatNaira(calculateCommission(67500000)), // ₦3.375M (5%)
       stage: "negotiation",
       progress: 75,
       probability: 85,
@@ -32,9 +33,9 @@ export default function DealsPage() {
       id: 2,
       title: "Family Home Purchase",
       client: "Emma Johnson",
-      property: "456 Pine Avenue",
-      value: "$750,000",
-      commission: "$22,500",
+      property: "456 Banana Island Road",
+      value: formatNaira(112500000), // ₦112.5M
+      commission: formatNaira(calculateCommission(112500000)), // ₦5.625M (5%)
       stage: "qualified",
       progress: 50,
       probability: 70,
@@ -47,9 +48,9 @@ export default function DealsPage() {
       id: 3,
       title: "Investment Property",
       client: "Robert Brown",
-      property: "789 Elm Drive",
-      value: "$320,000",
-      commission: "$9,600",
+      property: "789 Gwarinpa Estate",
+      value: formatNaira(48000000), // ₦48M
+      commission: formatNaira(calculateCommission(48000000)), // ₦2.4M (5%)
       stage: "proposal",
       progress: 25,
       probability: 45,
@@ -62,9 +63,9 @@ export default function DealsPage() {
       id: 4,
       title: "Luxury Villa Sale",
       client: "David Wilson",
-      property: "321 Ocean View",
-      value: "$1,200,000",
-      commission: "$36,000",
+      property: "321 Lekki Peninsula",
+      value: formatNaira(180000000), // ₦180M
+      commission: formatNaira(calculateCommission(180000000)), // ₦9M (5%)
       stage: "closed",
       progress: 100,
       probability: 100,
@@ -76,11 +77,11 @@ export default function DealsPage() {
   ]
 
   const pipelineStages = [
-    { name: "Lead", count: 15, value: "$2,100,000" },
-    { name: "Qualified", count: 8, value: "$1,800,000" },
-    { name: "Proposal", count: 5, value: "$1,200,000" },
-    { name: "Negotiation", count: 3, value: "$950,000" },
-    { name: "Closed", count: 2, value: "$650,000" },
+    { name: "Lead", count: 15, value: formatNaira(3150000000) }, // ₦3.15B
+    { name: "Qualified", count: 8, value: formatNaira(2700000000) }, // ₦2.7B
+    { name: "Proposal", count: 5, value: formatNaira(1800000000) }, // ₦1.8B
+    { name: "Negotiation", count: 3, value: formatNaira(1425000000) }, // ₦1.425B
+    { name: "Closed", count: 2, value: formatNaira(975000000) }, // ₦975M
   ]
 
   const filteredDeals = deals.filter(

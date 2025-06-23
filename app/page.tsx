@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Users, Home, DollarSign, TrendingUp, Calendar, Phone, Plus } from "lucide-react"
+import { formatNairaCompact } from "@/lib/currency"
 
 export default function Dashboard() {
   const stats = [
@@ -22,7 +23,7 @@ export default function Dashboard() {
     },
     {
       title: "Monthly Revenue",
-      value: "$125,000",
+      value: formatNairaCompact(187500000), // ₦187.5M
       change: "+18%",
       icon: DollarSign,
       color: "text-yellow-600",
@@ -94,7 +95,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Real Estate CRM</h1>
+              <h1 className="text-3xl font-bold text-gray-900">G3WHomes</h1>
               <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
             </div>
             <div className="flex space-x-3">
@@ -213,25 +214,25 @@ export default function Dashboard() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Leads</h3>
                 <div className="text-3xl font-bold text-blue-600 mb-2">45</div>
                 <Progress value={75} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">$2.1M potential</p>
+                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(3150000000)} potential</p>
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Qualified</h3>
                 <div className="text-3xl font-bold text-yellow-600 mb-2">23</div>
                 <Progress value={60} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">$1.8M potential</p>
+                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(2700000000)} potential</p>
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Negotiation</h3>
                 <div className="text-3xl font-bold text-orange-600 mb-2">12</div>
                 <Progress value={40} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">$1.2M potential</p>
+                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(1800000000)} potential</p>
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Closed</h3>
                 <div className="text-3xl font-bold text-green-600 mb-2">8</div>
                 <Progress value={100} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">$850K closed</p>
+                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(1275000000)} closed</p>
               </div>
             </div>
           </CardContent>

@@ -39,7 +39,7 @@ export default function Navigation() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">RealEstate CRM</h1>
+            <h1 className="text-xl font-bold text-gray-900">G3W CRM</h1>
           </div>
 
           {/* Navigation */}

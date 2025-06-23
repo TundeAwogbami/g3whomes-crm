@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Plus, MapPin, Bed, Bath, Square, Filter, MoreHorizontal, Eye, Edit, Heart } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { formatNaira } from "@/lib/currency"
 
 export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -17,8 +18,8 @@ export default function PropertiesPage() {
     {
       id: 1,
       title: "Modern Downtown Condo",
-      address: "123 Oak Street, New York, NY 10001",
-      price: "$450,000",
+      address: "123 Tiamiyu Savage Street, Victoria Island, Lagos",
+      price: formatNaira(67500000), // ₦67.5M
       type: "sale",
       status: "active",
       bedrooms: 2,
@@ -33,8 +34,8 @@ export default function PropertiesPage() {
     {
       id: 2,
       title: "Luxury Family Home",
-      address: "456 Pine Avenue, Los Angeles, CA 90210",
-      price: "$750,000",
+      address: "456 Banana Island Road, Ikoyi, Lagos",
+      price: formatNaira(112500000), // ₦112.5M
       type: "sale",
       status: "pending",
       bedrooms: 4,
@@ -49,8 +50,8 @@ export default function PropertiesPage() {
     {
       id: 3,
       title: "Investment Property",
-      address: "789 Elm Drive, Chicago, IL 60601",
-      price: "$2,500/month",
+      address: "789 Gwarinpa Estate, Abuja",
+      price: formatNaira(3750000) + "/month", // ₦3.75M/month
       type: "rent",
       status: "active",
       bedrooms: 3,
@@ -65,8 +66,8 @@ export default function PropertiesPage() {
     {
       id: 4,
       title: "Beachfront Villa",
-      address: "321 Ocean View, Miami, FL 33101",
-      price: "$1,200,000",
+      address: "321 Lekki Peninsula, Lagos",
+      price: formatNaira(180000000), // ₦180M
       type: "sale",
       status: "sold",
       bedrooms: 5,
@@ -77,6 +78,38 @@ export default function PropertiesPage() {
       listed: "2 months ago",
       views: 156,
       favorites: 45,
+    },
+    {
+      id: 5,
+      title: "Urban Loft",
+      address: "654 Yaba Tech Road, Yaba, Lagos",
+      price: formatNaira(57000000), // ₦57M
+      type: "sale",
+      status: "active",
+      bedrooms: 1,
+      bathrooms: 1,
+      sqft: 900,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "John Doe",
+      listed: "1 week ago",
+      views: 34,
+      favorites: 12,
+    },
+    {
+      id: 6,
+      title: "Suburban Townhouse",
+      address: "987 Magodo Phase 2, Lagos",
+      price: formatNaira(42750000), // ₦42.75M
+      type: "sale",
+      status: "active",
+      bedrooms: 3,
+      bathrooms: 2.5,
+      sqft: 1600,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "Jane Smith",
+      listed: "5 days ago",
+      views: 28,
+      favorites: 9,
     },
   ]
 
