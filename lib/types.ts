@@ -38,7 +38,7 @@ export interface Property {
   zip_code: string
   price?: number
   property_type: "house" | "condo" | "townhouse" | "apartment" | "commercial" | "land"
-  listing_type: "sale" | "rent"
+  listing_type: "sale" | "rent" | "lease" | "vacant"
   status: "active" | "pending" | "sold" | "rented" | "withdrawn"
   bedrooms?: number
   bathrooms?: number
