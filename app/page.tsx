@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Users, Home, DollarSign, TrendingUp, Calendar, Phone, Plus } from "lucide-react"
+import { Users, Home, DollarSign, TrendingUp, Calendar, Phone } from "lucide-react"
 import { formatNairaCompact } from "@/lib/currency"
+import { AddClientModal } from "@/components/add-client-modal"
+import { AddPropertyModal } from "@/components/add-property-modal"
 
 export default function Dashboard() {
   const stats = [
@@ -99,14 +100,8 @@ export default function Dashboard() {
               <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
             </div>
             <div className="flex space-x-3">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Client
-              </Button>
-              <Button variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Property
-              </Button>
+              <AddClientModal />
+              <AddPropertyModal />
             </div>
           </div>
         </div>

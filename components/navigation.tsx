@@ -3,8 +3,30 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Home, Users, Building, DollarSign, CheckSquare, FileText, BarChart3, Settings, Menu, X } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Home,
+  Users,
+  Building,
+  DollarSign,
+  CheckSquare,
+  FileText,
+  BarChart3,
+  Settings,
+  Menu,
+  X,
+  LogOut,
+  User,
+} from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -20,6 +42,18 @@ const navigation = [
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { data: session } = useSession()
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/auth/signin" })
+  }
+
+  const userInitials =
+    session?.user?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U"
 
   return (
     <>
@@ -66,17 +100,39 @@ export default function Navigation() {
             })}
           </nav>
 
-          {/* User info */}
+          {/* User info with dropdown */}
           <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">JD</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">Real Estate Agent</p>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start p-0 h-auto">
+                  <div className="flex items-center space-x-3 w-full">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
+                      <AvatarFallback className="bg-blue-600 text-white text-sm">{userInitials}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-900">{session?.user?.name || "User"}</p>
+                      <p className="text-xs text-gray-500">Real Estate Agent</p>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem>
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

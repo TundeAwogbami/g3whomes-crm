@@ -1,5 +1,5 @@
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- Real Estate CRM Database Schema for Supabase
+-- Remove the JWT secret line as it requires superuser privileges
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -152,3 +152,39 @@ CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
 CREATE INDEX IF NOT EXISTS idx_activities_type ON activities(activity_type);
 CREATE INDEX IF NOT EXISTS idx_activities_contact ON activities(contact_id);
 CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(activity_date);
+
+-- Enable Row Level Security (RLS) on all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE deals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+
+-- Create basic RLS policies (you can customize these later)
+-- Allow authenticated users to read all data
+CREATE POLICY "Allow authenticated users to read users" ON users FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read contacts" ON contacts FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read properties" ON properties FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read deals" ON deals FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read tasks" ON tasks FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read documents" ON documents FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to read activities" ON activities FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow authenticated users to insert/update/delete (you may want to restrict this later)
+CREATE POLICY "Allow authenticated users to insert contacts" ON contacts FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to update contacts" ON contacts FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete contacts" ON contacts FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to insert properties" ON properties FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to update properties" ON properties FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete properties" ON properties FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to insert deals" ON deals FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to update deals" ON deals FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete deals" ON deals FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users to insert tasks" ON tasks FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to update tasks" ON tasks FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to delete tasks" ON tasks FOR DELETE USING (auth.role() = 'authenticated');
