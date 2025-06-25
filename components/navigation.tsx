@@ -88,7 +88,7 @@ export default function Navigation() {
                   href={item.href}
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive
-                      ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
+                      ? "bg-dark-orange-50 text-dark-orange-700 border-r-2 border-dark-orange-700"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
@@ -108,7 +108,7 @@ export default function Navigation() {
                   <div className="flex items-center space-x-3 w-full">
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-                      <AvatarFallback className="bg-blue-600 text-white text-sm">{userInitials}</AvatarFallback>
+                      <AvatarFallback className="bg-dark-orange-600 text-white text-sm">{userInitials}</AvatarFallback>
                     </Avatar>
                     <div className="text-left">
                       <p className="text-sm font-medium text-gray-900">{session?.user?.name || "User"}</p>

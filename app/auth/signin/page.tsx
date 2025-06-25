@@ -2,15 +2,15 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { signIn, getSession, useSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 export default function SignIn() {
   const [email, setEmail] = useState("")
@@ -18,6 +18,16 @@ export default function SignIn() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
+  const callbackUrl = searchParams.get("callbackUrl") || "/"
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.push(callbackUrl)
+    }
+  }, [session, status, router, callbackUrl])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,21 +39,46 @@ export default function SignIn() {
         email,
         password,
         redirect: false,
+        callbackUrl,
       })
 
       if (result?.error) {
         setError("Invalid email or password")
-      } else {
-        // Refresh the session and redirect
+      } else if (result?.ok) {
+        // Force a session refresh
         await getSession()
-        router.push("/")
+        router.push(callbackUrl)
         router.refresh()
       }
     } catch (error) {
+      console.error("Sign in error:", error)
       setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Quick fill demo credentials
+  const fillDemoCredentials = (userType: "agent" | "admin") => {
+    if (userType === "agent") {
+      setEmail("john.doe@realestate.com")
+      setPassword("password123")
+    } else {
+      setEmail("admin@realestate.com")
+      setPassword("password123")
+    }
+  }
+
+  // Show loading if checking session
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-dark-orange-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -64,6 +99,7 @@ export default function SignIn() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                placeholder="john.doe@realestate.com"
               />
             </div>
             <div className="space-y-2">
@@ -75,10 +111,12 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                placeholder="password123"
               />
             </div>
             {error && (
               <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -88,10 +126,51 @@ export default function SignIn() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
-            <p className="text-sm text-blue-700">Email: john.doe@realestate.com</p>
-            <p className="text-sm text-blue-700">Password: password123</p>
+          <div className="mt-6 space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Demo Accounts</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials("agent")}
+                disabled={isLoading}
+              >
+                Agent Demo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials("admin")}
+                disabled={isLoading}
+              >
+                Admin Demo
+              </Button>
+            </div>
+
+            <div className="text-center text-sm text-gray-600 space-y-1">
+              <p className="font-medium">Demo Credentials:</p>
+              <div className="bg-gray-50 p-3 rounded-md text-left">
+                <p>
+                  <strong>Agent:</strong> john.doe@realestate.com
+                </p>
+                <p>
+                  <strong>Admin:</strong> admin@realestate.com
+                </p>
+                <p>
+                  <strong>Password:</strong> password123
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

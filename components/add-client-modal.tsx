@@ -215,6 +215,31 @@ export function AddClientModal({ onClientAdded }: AddClientModalProps) {
                   <SelectItem value="Delta">Delta</SelectItem>
                   <SelectItem value="Edo">Edo</SelectItem>
                   <SelectItem value="Anambra">Anambra</SelectItem>
+                  <SelectItem value="Plateau">Plateau</SelectItem>
+                  <SelectItem value="Osun">Osun</SelectItem>
+                  <SelectItem value="Bauchi">Bauchi</SelectItem>
+                  <SelectItem value="Borno">Borno</SelectItem>
+                  <SelectItem value="Taraba">Taraba</SelectItem>
+                  <SelectItem value="Cross River">Cross River</SelectItem>
+                  <SelectItem value="Benue">Benue</SelectItem>
+                  <SelectItem value="Kwara">Kwara</SelectItem>
+                  <SelectItem value="Jigawa">Jigawa</SelectItem>
+                  <SelectItem value="Katsina">Katsina</SelectItem>
+                  <SelectItem value="Sokoto">Sokoto</SelectItem>
+                  <SelectItem value="Kebbi">Kebbi</SelectItem>
+                  <SelectItem value="Niger">Niger</SelectItem>
+                  <SelectItem value="Kogi">Kogi</SelectItem>
+                  <SelectItem value="Nasarawa">Nasarawa</SelectItem>
+                  <SelectItem value="Yobe">Yobe</SelectItem>
+                  <SelectItem value="Ebonyi">Ebonyi</SelectItem>
+                  <SelectItem value="Ondo">Ondo</SelectItem>
+                  <SelectItem value="Ekiti">Ekiti</SelectItem>
+                  <SelectItem value="Adamawa">Adamawa</SelectItem>
+                  <SelectItem value="Akwa Ibom">Akwa Ibom</SelectItem>
+                  <SelectItem value="Imo">Imo</SelectItem>
+                  <SelectItem value="Bayelsa">Bayelsa</SelectItem>
+                  <SelectItem value="Gombe">Gombe</SelectItem>
+                  <SelectItem value="Zamfara">Zamfara</SelectItem>
                 </SelectContent>
               </Select>
             </div>

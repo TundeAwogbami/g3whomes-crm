@@ -1,10 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Users, Home, DollarSign, TrendingUp, Calendar, Phone } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Users, Home, DollarSign, TrendingUp, Calendar, Phone, Plus } from "lucide-react"
 import { formatNairaCompact } from "@/lib/currency"
-import { AddClientModal } from "@/components/add-client-modal"
-import { AddPropertyModal } from "@/components/add-property-modal"
 
 export default function Dashboard() {
   const stats = [
@@ -13,7 +12,7 @@ export default function Dashboard() {
       value: "1,234",
       change: "+12%",
       icon: Users,
-      color: "text-blue-600",
+      color: "text-dark-orange-600",
     },
     {
       title: "Active Listings",
@@ -100,8 +99,14 @@ export default function Dashboard() {
               <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
             </div>
             <div className="flex space-x-3">
-              <AddClientModal />
-              <AddPropertyModal />
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Client
+              </Button>
+              <Button variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Property
+              </Button>
             </div>
           </div>
         </div>
@@ -139,9 +144,9 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <div key={activity.id} className="flex items-center space-x-4 p-4 bg-dark-orange-50 rounded-lg">
                     <div className="flex-shrink-0">
-                      {activity.type === "call" && <Phone className="w-5 h-5 text-blue-600" />}
+                      {activity.type === "call" && <Phone className="w-5 h-5 text-dark-orange-600" />}
                       {activity.type === "showing" && <Home className="w-5 h-5 text-green-600" />}
                       {activity.type === "offer" && <DollarSign className="w-5 h-5 text-yellow-600" />}
                     </div>
@@ -207,7 +212,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Leads</h3>
-                <div className="text-3xl font-bold text-blue-600 mb-2">45</div>
+                <div className="text-3xl font-bold text-dark-orange-600 mb-2">45</div>
                 <Progress value={75} className="h-2" />
                 <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(3150000000)} potential</p>
               </div>
