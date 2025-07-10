@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Plus, Phone, Mail, MapPin, Calendar, Filter, MoreHorizontal, User, Building } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { formatNaira } from "@/lib/currency"
+import Link from "next/link"
 
 export default function ContactsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -114,10 +115,12 @@ export default function ContactsPage() {
               <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
               <p className="text-gray-600">Manage your clients, leads, and prospects</p>
             </div>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Contact
-            </Button>
+            <Link href="/contacts/add">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Contact
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -231,10 +234,12 @@ export default function ContactsPage() {
               <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Contact
-              </Button>
+              <Link href="/contacts/add">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Contact
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}

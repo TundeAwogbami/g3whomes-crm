@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Plus, MapPin, Bed, Bath, Square, Filter, MoreHorizontal, Eye, Edit, Heart } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { formatNaira } from "@/lib/currency"
+import Link from "next/link"
 
 export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -81,8 +82,8 @@ export default function PropertiesPage() {
     },
     {
       id: 5,
-      title: "Urban Loft",
-      address: "654 Yaba Tech Road, Yaba, Lagos",
+      title: "GenZ Lounge",
+      address: "Rayfield Jos",
       price: formatNaira(57000000), // ₦57M
       type: "sale",
       status: "active",
@@ -90,7 +91,7 @@ export default function PropertiesPage() {
       bathrooms: 1,
       sqft: 900,
       image: "/placeholder.svg?height=200&width=300",
-      agent: "John Doe",
+      agent: "Judith Yakubu",
       listed: "1 week ago",
       views: 34,
       favorites: 12,
@@ -144,10 +145,12 @@ export default function PropertiesPage() {
               <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
               <p className="text-gray-600">Manage your property listings and inventory</p>
             </div>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Property
-            </Button>
+            <Link href="/properties/add">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Property
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -180,7 +183,14 @@ export default function PropertiesPage() {
             <TabsTrigger value="all">All Properties</TabsTrigger>
             <TabsTrigger value="sale">For Sale</TabsTrigger>
             <TabsTrigger value="rent">For Rent</TabsTrigger>
-            <TabsTrigger value="sold">Sold</TabsTrigger>
+            <TabsTrigger value="sold">Sold</TabsTrigger> 
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="manage">Manage</TabsTrigger>
+          </div>
+          <TabsContent value="all" className="space-y-4">
+            {properties.map((property) => (
+              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative"></div>
           </TabsList>
         </Tabs>
 
@@ -283,10 +293,12 @@ export default function PropertiesPage() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Property
-              </Button>
+              <Link href="/properties/add">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Property
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}

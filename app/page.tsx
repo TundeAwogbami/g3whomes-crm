@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Users, Home, DollarSign, TrendingUp, Calendar, Phone, Plus } from "lucide-react"
 import { formatNairaCompact } from "@/lib/currency"
+import Link from "next/link"
 
 export default function Dashboard() {
   const stats = [
@@ -99,14 +100,18 @@ export default function Dashboard() {
               <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
             </div>
             <div className="flex space-x-3">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Client
-              </Button>
-              <Button variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Property
-              </Button>
+              <Link href="/contacts/add">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Client
+                </Button>
+              </Link>
+              <Link href="/properties/add">
+                <Button variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Property
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
