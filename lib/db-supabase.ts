@@ -1,313 +1,413 @@
-import { supabase } from "./supabase"
-import type { Contact, Property, Deal, Task, User } from "./types"
+import { createClient } from "@supabase/supabase-js"
+import type { User } from "next-auth"
+import type { Client, Property, Deal, Task, Document, DataRecord } from "./types"
 
-// ==================== CONTACTS ====================
-export async function getContacts(
-  filters: {
-    type?: string
-    status?: string
-    search?: string
-  } = {},
-) {
-  try {
-    let query = supabase.from("contacts").select(`
-        *,
-        assigned_agent:users!assigned_agent_id(first_name, last_name)
-      `)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (filters.type) {
-      query = query.eq("type", filters.type)
-    }
-
-    if (filters.status) {
-      query = query.eq("status", filters.status)
-    }
-
-    if (filters.search) {
-      query = query.or(
-        `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`,
-      )
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false })
-
-    if (error) throw error
-    return data as Contact[]
-  } catch (error) {
-    console.error("Error fetching contacts:", error)
-    throw new Error("Failed to fetch contacts")
-  }
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing Supabase URL or Anon Key environment variables.")
 }
 
-export async function getContactById(id: number) {
-  try {
-    const { data, error } = await supabase
-      .from("contacts")
-      .select(`
-        *,
-        assigned_agent:users!assigned_agent_id(first_name, last_name)
-      `)
-      .eq("id", id)
-      .single()
+export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
 
-    if (error) throw error
-    return data as Contact
-  } catch (error) {
-    console.error("Error fetching contact:", error)
-    throw new Error("Contact not found")
+export async function getClients(user: User): Promise<Client[]> {
+  const { data, error } = await supabaseClient.from("clients").select("*").eq("user_id", user.id)
+  if (error) {
+    console.error("Error fetching clients:", error)
+    return []
   }
+  return data as Client[]
 }
 
-export async function createContact(contactData: Omit<Contact, "id" | "created_at" | "updated_at">) {
-  try {
-    const { data, error } = await supabase.from("contacts").insert([contactData]).select().single()
-
-    if (error) throw error
-    return data as Contact
-  } catch (error) {
-    console.error("Error creating contact:", error)
-    throw new Error("Failed to create contact")
-  }
-}
-
-export async function updateContact(id: number, contactData: Partial<Contact>) {
-  try {
-    const { data, error } = await supabase
-      .from("contacts")
-      .update({ ...contactData, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as Contact
-  } catch (error) {
-    console.error("Error updating contact:", error)
-    throw new Error("Failed to update contact")
-  }
-}
-
-export async function deleteContact(id: number) {
-  try {
-    const { error } = await supabase.from("contacts").delete().eq("id", id)
-
-    if (error) throw error
-    return true
-  } catch (error) {
-    console.error("Error deleting contact:", error)
-    throw new Error("Failed to delete contact")
-  }
-}
-
-// ==================== PROPERTIES ====================
-export async function getProperties(
-  filters: {
-    status?: string
-    type?: string
-    listing_type?: string
-    search?: string
-  } = {},
-) {
-  try {
-    let query = supabase.from("properties").select(`
-        *,
-        listing_agent:users!listing_agent_id(first_name, last_name),
-        owner_contact:contacts!owner_contact_id(first_name, last_name)
-      `)
-
-    if (filters.status) {
-      query = query.eq("status", filters.status)
-    }
-
-    if (filters.type) {
-      query = query.eq("property_type", filters.type)
-    }
-
-    if (filters.listing_type) {
-      query = query.eq("listing_type", filters.listing_type)
-    }
-
-    if (filters.search) {
-      query = query.or(
-        `title.ilike.%${filters.search}%,address.ilike.%${filters.search}%,city.ilike.%${filters.search}%`,
-      )
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false })
-
-    if (error) throw error
-    return data as Property[]
-  } catch (error) {
-    console.error("Error fetching properties:", error)
-    throw new Error("Failed to fetch properties")
-  }
-}
-
-export async function createProperty(propertyData: Omit<Property, "id" | "created_at" | "updated_at">) {
-  try {
-    const { data, error } = await supabase.from("properties").insert([propertyData]).select().single()
-
-    if (error) throw error
-    return data as Property
-  } catch (error) {
-    console.error("Error creating property:", error)
-    throw new Error("Failed to create property")
-  }
-}
-
-// ==================== DEALS ====================
-export async function getDeals(
-  filters: {
-    stage?: string
-    agent_id?: number
-  } = {},
-) {
-  try {
-    let query = supabase.from("deals").select(`
-        *,
-        contact:contacts!contact_id(first_name, last_name),
-        property:properties!property_id(title, address),
-        agent:users!agent_id(first_name, last_name)
-      `)
-
-    if (filters.stage) {
-      query = query.eq("stage", filters.stage)
-    }
-
-    if (filters.agent_id) {
-      query = query.eq("agent_id", filters.agent_id)
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false })
-
-    if (error) throw error
-    return data as Deal[]
-  } catch (error) {
-    console.error("Error fetching deals:", error)
-    throw new Error("Failed to fetch deals")
-  }
-}
-
-export async function createDeal(dealData: Omit<Deal, "id" | "created_at" | "updated_at">) {
-  try {
-    // Calculate commission if deal value is provided
-    if (dealData.deal_value && dealData.commission_rate) {
-      dealData.commission_amount = (dealData.deal_value * dealData.commission_rate) / 100
-    }
-
-    const { data, error } = await supabase.from("deals").insert([dealData]).select().single()
-
-    if (error) throw error
-    return data as Deal
-  } catch (error) {
-    console.error("Error creating deal:", error)
-    throw new Error("Failed to create deal")
-  }
-}
-
-// ==================== TASKS ====================
-export async function getTasks(
-  filters: {
-    status?: string
-    assigned_to?: number
-    priority?: string
-  } = {},
-) {
-  try {
-    let query = supabase.from("tasks").select(`
-        *,
-        contact:contacts!contact_id(first_name, last_name),
-        property:properties!property_id(title),
-        deal:deals!deal_id(title),
-        assignee:users!assigned_to(first_name, last_name)
-      `)
-
-    if (filters.status) {
-      query = query.eq("status", filters.status)
-    }
-
-    if (filters.assigned_to) {
-      query = query.eq("assigned_to", filters.assigned_to)
-    }
-
-    if (filters.priority) {
-      query = query.eq("priority", filters.priority)
-    }
-
-    const { data, error } = await query.order("due_date", { ascending: true })
-
-    if (error) throw error
-    return data as Task[]
-  } catch (error) {
-    console.error("Error fetching tasks:", error)
-    throw new Error("Failed to fetch tasks")
-  }
-}
-
-export async function createTask(taskData: Omit<Task, "id" | "created_at" | "updated_at">) {
-  try {
-    const { data, error } = await supabase.from("tasks").insert([taskData]).select().single()
-
-    if (error) throw error
-    return data as Task
-  } catch (error) {
-    console.error("Error creating task:", error)
-    throw new Error("Failed to create task")
-  }
-}
-
-// ==================== USERS ====================
-export async function getUsers() {
-  try {
-    const { data, error } = await supabase.from("users").select("*").order("first_name", { ascending: true })
-
-    if (error) throw error
-    return data as User[]
-  } catch (error) {
-    console.error("Error fetching users:", error)
-    throw new Error("Failed to fetch users")
-  }
-}
-
-export async function getUserByEmail(email: string) {
-  try {
-    const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
-
-    if (error) throw error
-    return data as User
-  } catch (error) {
-    console.error("Error fetching user:", error)
+export async function getClientById(id: string, user: User): Promise<Client | null> {
+  const { data, error } = await supabaseClient.from("clients").select("*").eq("id", id).eq("user_id", user.id).single()
+  if (error) {
+    console.error("Error fetching client by ID:", error)
     return null
   }
+  return data as Client
 }
 
-// ==================== DASHBOARD STATS ====================
-export async function getDashboardStats() {
-  try {
-    const [contactsResult, propertiesResult, dealsResult, tasksResult] = await Promise.all([
-      supabase.from("contacts").select("*", { count: "exact", head: true }),
-      supabase.from("properties").select("*", { count: "exact", head: true }),
-      supabase.from("deals").select("deal_value, stage"),
-      supabase.from("tasks").select("*", { count: "exact", head: true }),
-    ])
+export async function createNewClient(client: Omit<Client, "id" | "user_id">, user: User): Promise<Client | null> {
+  const { data, error } = await supabaseClient
+    .from("clients")
+    .insert({ ...client, user_id: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating client:", error)
+    return null
+  }
+  return data as Client
+}
 
-    const totalContacts = contactsResult.count || 0
-    const totalProperties = propertiesResult.count || 0
-    const totalTasks = tasksResult.count || 0
+export async function updateClient(id: string, client: Partial<Client>, user: User): Promise<Client | null> {
+  const { data, error } = await supabaseClient
+    .from("clients")
+    .update(client)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single()
+  if (error) {
+    console.error("Error updating client:", error)
+    return null
+  }
+  return data as Client
+}
 
-    // Calculate revenue from closed deals
-    const closedDeals = dealsResult.data?.filter((deal) => deal.stage === "closed") || []
-    const monthlyRevenue = closedDeals.reduce((sum, deal) => sum + (deal.deal_value || 0), 0)
+export async function deleteClient(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("clients").delete().eq("id", id).eq("user_id", user.id)
+  if (error) {
+    console.error("Error deleting client:", error)
+  }
+}
 
+export async function getProperties(user: User): Promise<Property[]> {
+  const { data, error } = await supabaseClient.from("properties").select("*").eq("agent_id", user.id)
+  if (error) {
+    console.error("Error fetching properties:", error)
+    return []
+  }
+  return data as Property[]
+}
+
+export async function getPropertyById(id: string, user: User): Promise<Property | null> {
+  const { data, error } = await supabaseClient
+    .from("properties")
+    .select("*")
+    .eq("id", id)
+    .eq("agent_id", user.id)
+    .single()
+  if (error) {
+    console.error("Error fetching property by ID:", error)
+    return null
+  }
+  return data as Property
+}
+
+export async function createProperty(
+  property: Omit<Property, "id" | "agent_id">,
+  user: User,
+): Promise<Property | null> {
+  const { data, error } = await supabaseClient
+    .from("properties")
+    .insert({ ...property, agent_id: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating property:", error)
+    return null
+  }
+  return data as Property
+}
+
+export async function updateProperty(id: string, property: Partial<Property>, user: User): Promise<Property | null> {
+  const { data, error } = await supabaseClient
+    .from("properties")
+    .update(property)
+    .eq("id", id)
+    .eq("agent_id", user.id)
+    .select()
+    .single()
+  if (error) {
+    console.error("Error updating property:", error)
+    return null
+  }
+  return data as Property
+}
+
+export async function deleteProperty(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("properties").delete().eq("id", id).eq("agent_id", user.id)
+  if (error) {
+    console.error("Error deleting property:", error)
+  }
+}
+
+export async function getDeals(user: User): Promise<Deal[]> {
+  const { data, error } = await supabaseClient.from("deals").select("*").eq("agent_id", user.id)
+  if (error) {
+    console.error("Error fetching deals:", error)
+    return []
+  }
+  return data as Deal[]
+}
+
+export async function getDealById(id: string, user: User): Promise<Deal | null> {
+  const { data, error } = await supabaseClient.from("deals").select("*").eq("id", id).eq("agent_id", user.id).single()
+  if (error) {
+    console.error("Error fetching deal by ID:", error)
+    return null
+  }
+  return data as Deal
+}
+
+export async function createDeal(deal: Omit<Deal, "id" | "agent_id">, user: User): Promise<Deal | null> {
+  const { data, error } = await supabaseClient
+    .from("deals")
+    .insert({ ...deal, agent_id: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating deal:", error)
+    return null
+  }
+  return data as Deal
+}
+
+export async function updateDeal(id: string, deal: Partial<Deal>, user: User): Promise<Deal | null> {
+  const { data, error } = await supabaseClient
+    .from("deals")
+    .update(deal)
+    .eq("id", id)
+    .eq("agent_id", user.id)
+    .select()
+    .single()
+  if (error) {
+    console.error("Error updating deal:", error)
+    return null
+  }
+  return data as Deal
+}
+
+export async function deleteDeal(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("deals").delete().eq("id", id).eq("agent_id", user.id)
+  if (error) {
+    console.error("Error deleting deal:", error)
+  }
+}
+
+export async function getTasks(user: User): Promise<Task[]> {
+  const { data, error } = await supabaseClient.from("tasks").select("*").eq("user_id", user.id)
+  if (error) {
+    console.error("Error fetching tasks:", error)
+    return []
+  }
+  return data as Task[]
+}
+
+export async function getTaskById(id: string, user: User): Promise<Task | null> {
+  const { data, error } = await supabaseClient.from("tasks").select("*").eq("id", id).eq("user_id", user.id).single()
+  if (error) {
+    console.error("Error fetching task by ID:", error)
+    return null
+  }
+  return data as Task
+}
+
+export async function createTask(task: Omit<Task, "id" | "user_id">, user: User): Promise<Task | null> {
+  const { data, error } = await supabaseClient
+    .from("tasks")
+    .insert({ ...task, user_id: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating task:", error)
+    return null
+  }
+  return data as Task
+}
+
+export async function updateTask(id: string, task: Partial<Task>, user: User): Promise<Task | null> {
+  const { data, error } = await supabaseClient
+    .from("tasks")
+    .update(task)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single()
+  if (error) {
+    console.error("Error updating task:", error)
+    return null
+  }
+  return data as Task
+}
+
+export async function deleteTask(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("tasks").delete().eq("id", id).eq("user_id", user.id)
+  if (error) {
+    console.error("Error deleting task:", error)
+  }
+}
+
+// Document Management Functions
+export async function getDocuments(
+  user: User,
+  filters?: { category?: string; document_type?: string; access_level?: string; search?: string },
+): Promise<Document[]> {
+  let query = supabaseClient.from("documents").select("*")
+
+  if (filters?.category) {
+    query = query.eq("category", filters.category)
+  }
+  if (filters?.document_type) {
+    query = query.eq("document_type", filters.document_type)
+  }
+  if (filters?.access_level) {
+    query = query.eq("access_level", filters.access_level)
+  }
+  if (filters?.search) {
+    query = query.textSearch("search_vector", filters.search)
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false })
+  if (error) {
+    console.error("Error fetching documents:", error)
+    return []
+  }
+  return data as Document[]
+}
+
+export async function createDocument(
+  document: Omit<Document, "id" | "created_at" | "updated_at" | "uploaded_by">,
+  user: User,
+): Promise<Document | null> {
+  const { data, error } = await supabaseClient
+    .from("documents")
+    .insert({ ...document, uploaded_by: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating document:", error)
+    return null
+  }
+  return data as Document
+}
+
+export async function deleteDocument(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("documents").delete().eq("id", id).eq("uploaded_by", user.id)
+  if (error) {
+    console.error("Error deleting document:", error)
+  }
+}
+
+export async function logDocumentAccess(documentId: string, userId: string, action: string): Promise<void> {
+  const { error } = await supabaseClient
+    .from("document_access_log")
+    .insert({ document_id: documentId, user_id: userId, action })
+  if (error) {
+    console.error("Error logging document access:", error)
+  }
+}
+
+// Data Record Management Functions
+export async function getDataRecords(
+  user: User,
+  filters?: { category?: string; record_type?: string; access_level?: string; search?: string },
+): Promise<DataRecord[]> {
+  let query = supabaseClient.from("data_records").select("*")
+
+  if (filters?.category) {
+    query = query.eq("category", filters.category)
+  }
+  if (filters?.record_type) {
+    query = query.eq("record_type", filters.record_type)
+  }
+  if (filters?.access_level) {
+    query = query.eq("access_level", filters.access_level)
+  }
+  if (filters?.search) {
+    query = query.textSearch("search_vector", filters.search)
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false })
+  if (error) {
+    console.error("Error fetching data records:", error)
+    return []
+  }
+  return data as DataRecord[]
+}
+
+export async function createDataRecord(
+  record: Omit<DataRecord, "id" | "created_at" | "updated_at" | "created_by">,
+  user: User,
+): Promise<DataRecord | null> {
+  const { data, error } = await supabaseClient
+    .from("data_records")
+    .insert({ ...record, created_by: user.id })
+    .select()
+    .single()
+  if (error) {
+    console.error("Error creating data record:", error)
+    return null
+  }
+  return data as DataRecord
+}
+
+export async function updateDataRecord(
+  id: string,
+  record: Partial<DataRecord>,
+  user: User,
+): Promise<DataRecord | null> {
+  const { data, error } = await supabaseClient
+    .from("data_records")
+    .update(record)
+    .eq("id", id)
+    .eq("created_by", user.id)
+    .select()
+    .single()
+  if (error) {
+    console.error("Error updating data record:", error)
+    return null
+  }
+  return data as DataRecord
+}
+
+export async function deleteDataRecord(id: string, user: User): Promise<void> {
+  const { error } = await supabaseClient.from("data_records").delete().eq("id", id).eq("created_by", user.id)
+  if (error) {
+    console.error("Error deleting data record:", error)
+  }
+}
+
+export async function getDashboardStats(user: User) {
+  const { count: clientCount, error: clientError } = await supabaseClient
+    .from("clients")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+  const { count: propertyCount, error: propertyError } = await supabaseClient
+    .from("properties")
+    .select("*", { count: "exact", head: true })
+    .eq("agent_id", user.id)
+  const { count: dealCount, error: dealError } = await supabaseClient
+    .from("deals")
+    .select("*", { count: "exact", head: true })
+    .eq("agent_id", user.id)
+  const { count: taskCount, error: taskError } = await supabaseClient
+    .from("tasks")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+  const { count: documentCount, error: documentError } = await supabaseClient
+    .from("documents")
+    .select("*", { count: "exact", head: true })
+    .eq("uploaded_by", user.id)
+  const { count: dataRecordCount, error: dataRecordError } = await supabaseClient
+    .from("data_records")
+    .select("*", { count: "exact", head: true })
+    .eq("created_by", user.id)
+
+  if (clientError || propertyError || dealError || taskError || documentError || dataRecordError) {
+    console.error(
+      "Error fetching dashboard stats:",
+      clientError || propertyError || dealError || taskError || documentError || dataRecordError,
+    )
     return {
-      totalContacts,
-      totalProperties,
-      monthlyRevenue,
-      totalTasks,
-      closedDeals: closedDeals.length,
+      clientCount: 0,
+      propertyCount: 0,
+      dealCount: 0,
+      taskCount: 0,
+      documentCount: 0,
+      dataRecordCount: 0,
     }
-  } catch (error) {
-    console.error("Error fetching dashboard stats:", error)
-    throw new Error("Failed to fetch dashboard statistics")
+  }
+
+  return {
+    clientCount: clientCount || 0,
+    propertyCount: propertyCount || 0,
+    dealCount: dealCount || 0,
+    taskCount: taskCount || 0,
+    documentCount: documentCount || 0,
+    dataRecordCount: dataRecordCount || 0,
   }
 }

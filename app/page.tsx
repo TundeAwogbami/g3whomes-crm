@@ -1,38 +1,39 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Home, DollarSign, TrendingUp, Calendar, Phone, Plus } from "lucide-react"
-import { formatNairaCompact } from "@/lib/currency"
+import { Badge } from "@/components/ui/badge"
+import { Users, Home, DollarSign, TrendingUp, Plus, Phone, Calendar } from "lucide-react"
 import Link from "next/link"
+import { formatNaira } from "@/lib/currency"
 
 export default function Dashboard() {
   const stats = [
     {
       title: "Total Clients",
       value: "1,234",
-      change: "+12%",
+      change: "+12% from last month",
       icon: Users,
-      color: "text-dark-orange-600",
+      color: "text-blue-600",
     },
     {
       title: "Active Listings",
       value: "89",
-      change: "+5%",
+      change: "+5% from last month",
       icon: Home,
       color: "text-green-600",
     },
     {
       title: "Monthly Revenue",
-      value: formatNairaCompact(187500000), // ₦187.5M
-      change: "+18%",
+      value: formatNaira(187500000), // ₦187.5M
+      change: "+18% from last month",
       icon: DollarSign,
       color: "text-yellow-600",
     },
     {
       title: "Deals Closed",
       value: "23",
-      change: "+8%",
+      change: "+8% from last month",
       icon: TrendingUp,
       color: "text-purple-600",
     },
@@ -41,53 +42,89 @@ export default function Dashboard() {
   const recentActivities = [
     {
       id: 1,
-      type: "call",
-      client: "John Smith",
-      property: "123 Oak Street",
-      time: "2 hours ago",
+      type: "client",
+      title: "John Smith",
+      subtitle: "123 Oak Street",
       status: "completed",
+      time: "2 hours ago",
+      icon: Phone,
     },
     {
       id: 2,
-      type: "showing",
-      client: "Sarah Johnson",
-      property: "456 Pine Avenue",
-      time: "4 hours ago",
+      type: "property",
+      title: "Sarah Johnson",
+      subtitle: "456 Pine Avenue",
       status: "scheduled",
+      time: "4 hours ago",
+      icon: Home,
     },
     {
       id: 3,
-      type: "offer",
-      client: "Mike Davis",
-      property: "789 Elm Drive",
-      time: "1 day ago",
+      type: "deal",
+      title: "Mike Davis",
+      subtitle: "789 Elm Drive",
       status: "pending",
+      time: "1 day ago",
+      icon: DollarSign,
     },
   ]
 
   const upcomingTasks = [
     {
       id: 1,
-      task: "Follow up with potential buyer",
+      title: "Follow up with potential buyer",
       client: "Emma Wilson",
-      dueDate: "Today, 3:00 PM",
+      time: "Today, 3:00 PM",
       priority: "high",
     },
     {
       id: 2,
-      task: "Property inspection",
+      title: "Property inspection",
       client: "Robert Brown",
-      dueDate: "Tomorrow, 10:00 AM",
+      time: "Tomorrow, 10:00 AM",
       priority: "medium",
     },
     {
       id: 3,
-      task: "Contract review",
+      title: "Contract review",
       client: "Lisa Garcia",
-      dueDate: "Dec 18, 2:00 PM",
+      time: "Dec 18, 2:00 PM",
       priority: "low",
     },
   ]
+
+  const salesPipeline = [
+    { stage: "Leads", count: 45, color: "bg-gray-200" },
+    { stage: "Qualified", count: 23, color: "bg-blue-200" },
+    { stage: "Negotiation", count: 12, color: "bg-yellow-200" },
+    { stage: "Closed", count: 8, color: "bg-green-200" },
+  ]
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800"
+      case "scheduled":
+        return "bg-blue-100 text-blue-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-100 text-red-800"
+      case "medium":
+        return "bg-yellow-100 text-yellow-800"
+      case "low":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -101,13 +138,13 @@ export default function Dashboard() {
             </div>
             <div className="flex space-x-3">
               <Link href="/contacts/add">
-                <Button>
+                <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Client
                 </Button>
               </Link>
               <Link href="/properties/add">
-                <Button variant="outline">
+                <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Property
                 </Button>
@@ -120,50 +157,47 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <Card key={index}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className="text-sm text-green-600">{stat.change} from last month</p>
-                    </div>
-                    <Icon className={`w-8 h-8 ${stat.color}`} />
+          {stats.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-sm text-green-600">{stat.change}</p>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                  <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Recent Activities */}
-          <Card className="lg:col-span-2">
+          <Card>
             <CardHeader>
               <CardTitle>Recent Activities</CardTitle>
-              <CardDescription>Latest client interactions and property activities</CardDescription>
+              <p className="text-sm text-gray-600">Latest client interactions and property activities</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center space-x-4 p-4 bg-dark-orange-50 rounded-lg">
-                    <div className="flex-shrink-0">
-                      {activity.type === "call" && <Phone className="w-5 h-5 text-dark-orange-600" />}
-                      {activity.type === "showing" && <Home className="w-5 h-5 text-green-600" />}
-                      {activity.type === "offer" && <DollarSign className="w-5 h-5 text-yellow-600" />}
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-white rounded-lg">
+                        <activity.icon className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{activity.title}</p>
+                        <p className="text-sm text-gray-600">{activity.subtitle}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{activity.client}</p>
-                      <p className="text-sm text-gray-500">{activity.property}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={activity.status === "completed" ? "default" : "secondary"}>
-                        {activity.status}
-                      </Badge>
-                      <span className="text-sm text-gray-500">{activity.time}</span>
+                    <div className="text-right">
+                      <Badge className={getStatusColor(activity.status)}>{activity.status}</Badge>
+                      <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
                     </div>
                   </div>
                 ))}
@@ -175,30 +209,27 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Tasks</CardTitle>
-              <CardDescription>Your scheduled activities</CardDescription>
+              <p className="text-sm text-gray-600">Your scheduled activities</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {upcomingTasks.map((task) => (
-                  <div key={task.id} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium text-gray-900">{task.task}</h4>
-                      <Badge
-                        variant={
-                          task.priority === "high"
-                            ? "destructive"
-                            : task.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                      >
-                        {task.priority}
-                      </Badge>
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-white rounded-lg">
+                        <Calendar className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{task.title}</p>
+                        <p className="text-sm text-gray-600">{task.client}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">{task.client}</p>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {task.dueDate}
+                    <div className="text-right">
+                      <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                      <p className="text-xs text-gray-500 mt-1">
+                        <Calendar className="w-3 h-3 inline mr-1" />
+                        {task.time}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -208,37 +239,21 @@ export default function Dashboard() {
         </div>
 
         {/* Sales Pipeline */}
-        <Card className="mt-8">
+        <Card>
           <CardHeader>
             <CardTitle>Sales Pipeline</CardTitle>
-            <CardDescription>Current deals progress</CardDescription>
+            <p className="text-sm text-gray-600">Current deals progress</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Leads</h3>
-                <div className="text-3xl font-bold text-dark-orange-600 mb-2">45</div>
-                <Progress value={75} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(3150000000)} potential</p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Qualified</h3>
-                <div className="text-3xl font-bold text-yellow-600 mb-2">23</div>
-                <Progress value={60} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(2700000000)} potential</p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Negotiation</h3>
-                <div className="text-3xl font-bold text-orange-600 mb-2">12</div>
-                <Progress value={40} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(1800000000)} potential</p>
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Closed</h3>
-                <div className="text-3xl font-bold text-green-600 mb-2">8</div>
-                <Progress value={100} className="h-2" />
-                <p className="text-sm text-gray-500 mt-1">{formatNairaCompact(1275000000)} closed</p>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {salesPipeline.map((stage, index) => (
+                <div key={index} className="text-center">
+                  <div className={`${stage.color} rounded-lg p-6 mb-2`}>
+                    <div className="text-2xl font-bold text-gray-900">{stage.count}</div>
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">{stage.stage}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

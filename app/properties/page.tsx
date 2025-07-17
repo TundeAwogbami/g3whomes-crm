@@ -82,8 +82,8 @@ export default function PropertiesPage() {
     },
     {
       id: 5,
-      title: "GenZ Lounge",
-      address: "Rayfield Jos",
+      title: "Urban Loft",
+      address: "654 Yaba Tech Road, Yaba, Lagos",
       price: formatNaira(57000000), // ₦57M
       type: "sale",
       status: "active",
@@ -91,7 +91,7 @@ export default function PropertiesPage() {
       bathrooms: 1,
       sqft: 900,
       image: "/placeholder.svg?height=200&width=300",
-      agent: "Judith Yakubu",
+      agent: "John Doe",
       listed: "1 week ago",
       views: 34,
       favorites: 12,
@@ -146,7 +146,7 @@ export default function PropertiesPage() {
               <p className="text-gray-600">Manage your property listings and inventory</p>
             </div>
             <Link href="/properties/add">
-              <Button>
+              <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Property
               </Button>
@@ -183,14 +183,7 @@ export default function PropertiesPage() {
             <TabsTrigger value="all">All Properties</TabsTrigger>
             <TabsTrigger value="sale">For Sale</TabsTrigger>
             <TabsTrigger value="rent">For Rent</TabsTrigger>
-            <TabsTrigger value="sold">Sold</TabsTrigger> 
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="manage">Manage</TabsTrigger>
-          </div>
-          <TabsContent value="all" className="space-y-4">
-            {properties.map((property) => (
-              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative"></div>
+            <TabsTrigger value="sold">Sold</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -294,7 +287,7 @@ export default function PropertiesPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
               <Link href="/properties/add">
-                <Button>
+                <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Your First Property
                 </Button>

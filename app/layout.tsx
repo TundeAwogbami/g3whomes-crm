@@ -2,15 +2,16 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import Navigation from "@/components/navigation"
+import { ThemeProvider } from "@/components/theme-provider"
 import AuthProvider from "@/components/auth-provider"
 import { Toaster } from "@/components/toaster"
+import Navigation from "@/components/navigation" // Corrected import
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Real Estate CRM",
-  description: "Comprehensive CRM system for real estate professionals",
+  description: "A comprehensive CRM for real estate management",
 }
 
 export default function RootLayout({
@@ -19,15 +20,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <div className="flex h-screen bg-gray-50">
-            <Navigation />
-            <main className="flex-1 lg:ml-64 overflow-auto">{children}</main>
-          </div>
-          <Toaster />
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <div className="flex min-h-screen">
+              <Navigation /> {/* Render the Navigation component */}
+              <main className="flex-1 flex flex-col">{children}</main>
+            </div>
+            <Toaster />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

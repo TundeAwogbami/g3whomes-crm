@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Plus, Phone, Mail, MapPin, Calendar, Filter, MoreHorizontal, User, Building } from "lucide-react"
+import { Search, Plus, Mail, Phone, Filter, MoreHorizontal, Eye, Edit, MessageSquare } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { formatNaira } from "@/lib/currency"
 import Link from "next/link"
 
 export default function ContactsPage() {
@@ -21,52 +19,66 @@ export default function ContactsPage() {
       id: 1,
       name: "John Smith",
       email: "john.smith@email.com",
-      phone: "(234) 803-123-4567",
+      phone: "+234 801 234 5678",
       type: "buyer",
       status: "active",
-      location: "Lagos, Nigeria",
       lastContact: "2 days ago",
       properties: 3,
-      value: formatNaira(67500000), // ₦67.5M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 2,
       name: "Sarah Johnson",
       email: "sarah.j@email.com",
-      phone: "(234) 806-234-5678",
+      phone: "+234 802 345 6789",
       type: "seller",
       status: "qualified",
-      location: "Abuja, Nigeria",
       lastContact: "1 week ago",
       properties: 1,
-      value: formatNaira(112500000), // ₦112.5M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 3,
       name: "Mike Davis",
       email: "mike.davis@email.com",
-      phone: "(234) 809-345-6789",
+      phone: "+234 803 456 7890",
       type: "investor",
       status: "lead",
-      location: "Port Harcourt, Nigeria",
       lastContact: "3 days ago",
       properties: 5,
-      value: formatNaira(180000000), // ₦180M
       avatar: "/placeholder.svg?height=40&width=40",
     },
     {
       id: 4,
       name: "Emma Wilson",
       email: "emma.wilson@email.com",
-      phone: "(234) 807-456-7890",
+      phone: "+234 804 567 8901",
       type: "buyer",
       status: "active",
-      location: "Kano, Nigeria",
-      lastContact: "Today",
+      lastContact: "1 day ago",
       properties: 2,
-      value: formatNaira(48000000), // ₦48M
+      avatar: "/placeholder.svg?height=40&width=40",
+    },
+    {
+      id: 5,
+      name: "Robert Brown",
+      email: "robert.brown@email.com",
+      phone: "+234 805 678 9012",
+      type: "seller",
+      status: "inactive",
+      lastContact: "2 weeks ago",
+      properties: 1,
+      avatar: "/placeholder.svg?height=40&width=40",
+    },
+    {
+      id: 6,
+      name: "Lisa Garcia",
+      email: "lisa.garcia@email.com",
+      phone: "+234 806 789 0123",
+      type: "lead",
+      status: "qualified",
+      lastContact: "5 days ago",
+      properties: 0,
       avatar: "/placeholder.svg?height=40&width=40",
     },
   ]
@@ -75,7 +87,7 @@ export default function ContactsPage() {
     const matchesSearch =
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesTab = activeTab === "all" || contact.type === activeTab
+    const matchesTab = activeTab === "all" || contact.type === activeTab || contact.status === activeTab
     return matchesSearch && matchesTab
   })
 
@@ -87,21 +99,25 @@ export default function ContactsPage() {
         return "bg-blue-100 text-blue-800"
       case "lead":
         return "bg-yellow-100 text-yellow-800"
+      case "inactive":
+        return "bg-gray-100 text-gray-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
   }
 
-  const getTypeIcon = (type: string) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case "buyer":
-        return <User className="w-4 h-4" />
+        return "bg-purple-100 text-purple-800"
       case "seller":
-        return <Building className="w-4 h-4" />
+        return "bg-orange-100 text-orange-800"
       case "investor":
-        return <Building className="w-4 h-4" />
+        return "bg-indigo-100 text-indigo-800"
+      case "lead":
+        return "bg-pink-100 text-pink-800"
       default:
-        return <User className="w-4 h-4" />
+        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -113,10 +129,10 @@ export default function ContactsPage() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
-              <p className="text-gray-600">Manage your clients, leads, and prospects</p>
+              <p className="text-gray-600">Manage your clients and leads</p>
             </div>
             <Link href="/contacts/add">
-              <Button>
+              <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Contact
               </Button>
@@ -154,6 +170,7 @@ export default function ContactsPage() {
             <TabsTrigger value="buyer">Buyers</TabsTrigger>
             <TabsTrigger value="seller">Sellers</TabsTrigger>
             <TabsTrigger value="investor">Investors</TabsTrigger>
+            <TabsTrigger value="lead">Leads</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -162,22 +179,18 @@ export default function ContactsPage() {
           {filteredContacts.map((contact) => (
             <Card key={contact.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src={contact.avatar || "/placeholder.svg"} alt={contact.name} />
-                      <AvatarFallback>
-                        {contact.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
+                    <img
+                      src={contact.avatar || "/placeholder.svg"}
+                      alt={contact.name}
+                      className="w-10 h-10 rounded-full"
+                    />
                     <div>
                       <CardTitle className="text-lg">{contact.name}</CardTitle>
-                      <div className="flex items-center space-x-2 mt-1">
-                        {getTypeIcon(contact.type)}
-                        <span className="text-sm text-gray-600 capitalize">{contact.type}</span>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getTypeColor(contact.type)}>{contact.type}</Badge>
+                        <Badge className={getStatusColor(contact.status)}>{contact.status}</Badge>
                       </div>
                     </div>
                   </div>
@@ -188,40 +201,41 @@ export default function ContactsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem>Edit Contact</DropdownMenuItem>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Add Note</DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Contact
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Send Message
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </CardHeader>
+
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Mail className="w-4 h-4" />
-                    <span>{contact.email}</span>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Mail className="w-4 h-4 mr-2" />
+                    {contact.email}
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Phone className="w-4 h-4" />
-                    <span>{contact.phone}</span>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Phone className="w-4 h-4 mr-2" />
+                    {contact.phone}
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4" />
-                    <span>{contact.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>Last contact: {contact.lastContact}</span>
-                  </div>
+                </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <Badge className={getStatusColor(contact.status)}>{contact.status}</Badge>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">{contact.value}</div>
-                      <div className="text-xs text-gray-500">{contact.properties} properties</div>
-                    </div>
+                <div className="flex items-center justify-between mt-4 pt-4 border-t text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">{contact.properties}</span> properties
                   </div>
+                  <div>Last contact: {contact.lastContact}</div>
                 </div>
               </CardContent>
             </Card>
@@ -231,11 +245,13 @@ export default function ContactsPage() {
         {filteredContacts.length === 0 && (
           <Card>
             <CardContent className="p-12 text-center">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-gray-400" />
+              </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No contacts found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
               <Link href="/contacts/add">
-                <Button>
+                <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Your First Contact
                 </Button>

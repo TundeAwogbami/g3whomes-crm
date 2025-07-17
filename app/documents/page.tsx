@@ -1,207 +1,550 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, FileText, Download, Eye, MoreHorizontal, Upload, Filter } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  FileText,
+  Folder,
+  Lock,
+  Unlock,
+  Upload,
+  PlusCircle,
+  Download,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Handshake,
+  Home,
+  Users,
+  Building,
+  Briefcase,
+  File,
+  Clipboard,
+  DollarSign,
+  Shield,
+  User,
+  Gavel,
+  FileBadge,
+  FileCheck,
+  FileJson,
+  FileAudio,
+  FileVideo,
+  FileImage,
+  FileSpreadsheet,
+  FileIcon as FileWord,
+  FileIcon as FilePdf,
+} from "lucide-react"
+import { format } from "date-fns"
+import type { Document } from "@/lib/types"
+
+const documentCategories = [
+  { value: "Client", label: "Client", icon: Users },
+  { value: "Staff", label: "Staff", icon: User },
+  { value: "Affiliate", label: "Affiliate", icon: Handshake },
+  { value: "Property", label: "Property", icon: Building },
+  { value: "Company", label: "Company", icon: Briefcase },
+]
+
+const documentTypes = [
+  { value: "Contract", label: "Contract", icon: FileText },
+  { value: "Medical", label: "Medical", icon: Clipboard },
+  { value: "Financial", label: "Financial", icon: DollarSign },
+  { value: "Identity", label: "Identity", icon: Shield },
+  { value: "Property", label: "Property", icon: Home },
+  { value: "Legal", label: "Legal", icon: Gavel },
+  { value: "Insurance", label: "Insurance", icon: FileBadge },
+  { value: "Tax", label: "Tax", icon: FileCheck },
+  { value: "Other", label: "Other", icon: File },
+]
+
+const accessLevels = [
+  { value: "Public", label: "Public", icon: Unlock },
+  { value: "Internal", label: "Internal", icon: Users },
+  { value: "Confidential", label: "Confidential", icon: Lock },
+  { value: "Restricted", label: "Restricted", icon: Shield },
+]
+
+const fileTypeIcons: { [key: string]: React.ElementType } = {
+  pdf: FilePdf,
+  doc: FileWord,
+  docx: FileWord,
+  xls: FileSpreadsheet,
+  xlsx: FileSpreadsheet,
+  jpg: FileImage,
+  jpeg: FileImage,
+  png: FileImage,
+  gif: FileImage,
+  mp4: FileVideo,
+  mov: FileVideo,
+  avi: FileVideo,
+  mp3: FileAudio,
+  wav: FileAudio,
+  json: FileJson,
+  txt: FileText,
+  default: File,
+}
+
+function getFileTypeIcon(fileName: string) {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "default"
+  return fileTypeIcons[ext] || fileTypeIcons.default
+}
 
 export default function DocumentsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
-
-  const documents = [
-    {
-      id: 1,
-      name: "Purchase Agreement - John Smith",
-      type: "contract",
-      size: "2.4 MB",
-      uploadedBy: "Sarah Wilson",
-      uploadedAt: "2 days ago",
-      client: "John Smith",
-      property: "123 Oak Street",
-    },
-    {
-      id: 2,
-      name: "Property Inspection Report",
-      type: "inspection",
-      size: "1.8 MB",
-      uploadedBy: "Mike Davis",
-      uploadedAt: "1 week ago",
-      client: "Emma Johnson",
-      property: "456 Pine Avenue",
-    },
-    {
-      id: 3,
-      name: "Financial Pre-approval Letter",
-      type: "financial",
-      size: "856 KB",
-      uploadedBy: "Lisa Garcia",
-      uploadedAt: "3 days ago",
-      client: "Robert Brown",
-      property: "789 Elm Drive",
-    },
-    {
-      id: 4,
-      name: "Property Marketing Brochure",
-      type: "marketing",
-      size: "3.2 MB",
-      uploadedBy: "John Doe",
-      uploadedAt: "5 days ago",
-      client: "Maria Garcia",
-      property: "321 Ocean View",
-    },
-  ]
-
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.property.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesTab = activeTab === "all" || doc.type === activeTab
-    return matchesSearch && matchesTab
+  const { data: session } = useSession()
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState({
+    category: "All Categories",
+    document_type: "All Types",
+    access_level: "All Access Levels",
+    search: "",
   })
+  const [newDocument, setNewDocument] = useState<Partial<Document>>({
+    name: "",
+    file_url: "",
+    category: "",
+    document_type: "",
+    access_level: "Internal",
+    tags: [],
+    metadata: {},
+  })
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "contract":
-        return "bg-blue-100 text-blue-800"
-      case "inspection":
-        return "bg-green-100 text-green-800"
-      case "financial":
-        return "bg-yellow-100 text-yellow-800"
-      case "marketing":
-        return "bg-purple-100 text-purple-800"
-      case "legal":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const fetchDocuments = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const queryParams = new URLSearchParams()
+      if (filters.category !== "All Categories") queryParams.append("category", filters.category)
+      if (filters.document_type !== "All Types") queryParams.append("document_type", filters.document_type)
+      if (filters.access_level !== "All Access Levels") queryParams.append("access_level", filters.access_level)
+      if (filters.search) queryParams.append("search", filters.search)
+
+      const res = await fetch(`/api/documents?${queryParams.toString()}`)
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`)
+      }
+      const data = await res.json()
+      setDocuments(data)
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch documents.")
+    } finally {
+      setLoading(false)
     }
   }
 
+  useEffect(() => {
+    if (session) {
+      fetchDocuments()
+    }
+  }, [session, filters])
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleNewDocumentChange = (key: string, value: any) => {
+    setNewDocument((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadError(null)
+    setUploadSuccess(null)
+
+    // In a real application, you would upload the file to a storage service (e.g., Supabase Storage, S3)
+    // For this example, we'll simulate an upload and use a placeholder URL.
+    try {
+      // Simulate file upload
+      const simulatedUploadUrl = `/uploads/${file.name}` // Replace with actual uploaded URL
+      const simulatedFileSize = file.size
+      const simulatedFileType = file.type.split("/").pop() || "unknown"
+
+      setNewDocument((prev) => ({
+        ...prev,
+        file_url: simulatedUploadUrl,
+        file_name: file.name,
+        file_size: simulatedFileSize,
+        file_type: simulatedFileType,
+      }))
+      setUploadSuccess("File selected. Ready to create document.")
+    } catch (err) {
+      setUploadError("Failed to process file for upload.")
+    }
+  }
+
+  const handleCreateDocument = async () => {
+    setUploadError(null)
+    setUploadSuccess(null)
+    if (!newDocument.name || !newDocument.file_url || !newDocument.category || !newDocument.document_type) {
+      setUploadError("Please fill all required fields (Name, File, Category, Document Type).")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/documents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newDocument),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || `HTTP error! status: ${res.status}`)
+      }
+
+      setUploadSuccess("Document created successfully!")
+      setNewDocument({
+        name: "",
+        file_url: "",
+        category: "",
+        document_type: "",
+        access_level: "Internal",
+        tags: [],
+        metadata: {},
+      })
+      fetchDocuments() // Refresh list
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to create document.")
+    }
+  }
+
+  const handleDeleteDocument = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this document?")) {
+      return
+    }
+    try {
+      const res = await fetch(`/api/documents?id=${id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || `HTTP error! status: ${res.status}`)
+      }
+
+      setUploadSuccess("Document deleted successfully!")
+      fetchDocuments() // Refresh list
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to delete document.")
+    }
+  }
+
+  const handleDownloadDocument = async (document: Document) => {
+    // In a real application, you would trigger a secure download from your storage service
+    // For this example, we'll just open the simulated URL.
+    window.open(document.file_url, "_blank")
+
+    // Log document access
+    if (session?.user?.id) {
+      await fetch("/api/documents/log-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: document.id, action: "download" }),
+      })
+    }
+  }
+
+  if (!session) {
+    return <div className="flex items-center justify-center h-full">Please sign in to view documents.</div>
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Documents</h1>
-              <p className="text-gray-600">Manage contracts, reports, and other important files</p>
-            </div>
-            <Button>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Document
+    <div className="flex flex-col gap-6 p-6">
+      <h1 className="text-3xl font-bold text-dark-orange-700">Document Management</h1>
+
+      {uploadError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{uploadError}</AlertDescription>
+        </Alert>
+      )}
+      {uploadSuccess && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertTitle>Success</AlertTitle>
+          <AlertDescription>{uploadSuccess}</AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PlusCircle className="h-5 w-5" /> Upload New Document
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="documentName">Document Name</Label>
+            <Input
+              id="documentName"
+              placeholder="e.g., Client Contract Q4 2023"
+              value={newDocument.name}
+              onChange={(e) => handleNewDocumentChange("name", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fileUpload">File</Label>
+            <Input id="fileUpload" type="file" onChange={handleFileUpload} />
+            {newDocument.file_name && (
+              <p className="text-sm text-muted-foreground">Selected: {newDocument.file_name}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentCategory">Category</Label>
+            <Select value={newDocument.category} onValueChange={(value) => handleNewDocumentChange("category", value)}>
+              <SelectTrigger id="documentCategory">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {documentCategories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <div className="flex items-center gap-2">
+                      <cat.icon className="h-4 w-4" /> {cat.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentType">Document Type</Label>
+            <Select
+              value={newDocument.document_type}
+              onValueChange={(value) => handleNewDocumentChange("document_type", value)}
+            >
+              <SelectTrigger id="documentType">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {documentTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    <div className="flex items-center gap-2">
+                      <type.icon className="h-4 w-4" /> {type.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="accessLevel">Access Level</Label>
+            <Select
+              value={newDocument.access_level}
+              onValueChange={(value) => handleNewDocumentChange("access_level", value)}
+            >
+              <SelectTrigger id="accessLevel">
+                <SelectValue placeholder="Select access level" />
+              </SelectTrigger>
+              <SelectContent>
+                {accessLevels.map((level) => (
+                  <SelectItem key={level.value} value={level.value}>
+                    <div className="flex items-center gap-2">
+                      <level.icon className="h-4 w-4" /> {level.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentTags">Tags (comma-separated)</Label>
+            <Input
+              id="documentTags"
+              placeholder="e.g., urgent, signed, client-A"
+              value={newDocument.tags?.join(", ") || ""}
+              onChange={(e) =>
+                handleNewDocumentChange(
+                  "tags",
+                  e.target.value.split(",").map((tag) => tag.trim()),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2 lg:col-span-3">
+            <Label htmlFor="metadata">Metadata (JSON)</Label>
+            <Textarea
+              id="metadata"
+              placeholder='{"version": "1.0", "status": "approved"}'
+              value={JSON.stringify(newDocument.metadata, null, 2)}
+              onChange={(e) => {
+                try {
+                  handleNewDocumentChange("metadata", JSON.parse(e.target.value))
+                } catch {
+                  // Ignore invalid JSON input for now, handle on submit
+                }
+              }}
+            />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3 flex justify-end">
+            <Button onClick={handleCreateDocument} className="bg-dark-orange-500 hover:bg-dark-orange-600">
+              <Upload className="mr-2 h-4 w-4" /> Create Document
             </Button>
           </div>
-        </div>
-      </header>
+        </CardContent>
+      </Card>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search documents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button variant="outline">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
-              </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Folder className="h-5 w-5" /> All Documents
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 flex flex-wrap items-center gap-4">
+            <Input
+              placeholder="Search documents..."
+              className="max-w-sm flex-1"
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+            />
+            <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Categories">All Categories</SelectItem>
+                {documentCategories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.document_type} onValueChange={(value) => handleFilterChange("document_type", value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Types">All Types</SelectItem>
+                {documentTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.access_level} onValueChange={(value) => handleFilterChange("access_level", value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Access" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Access Levels">All Access Levels</SelectItem>
+                {accessLevels.map((level) => (
+                  <SelectItem key={level.value} value={level.value}>
+                    {level.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() =>
+                setFilters({
+                  category: "All Categories",
+                  document_type: "All Types",
+                  access_level: "All Access Levels",
+                  search: "",
+                })
+              }
+              variant="outline"
+            >
+              Reset Filters
+            </Button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">Loading documents...</div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : documents.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No documents found.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Access</TableHead>
+                    <TableHead>Uploaded By</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc) => {
+                    const CategoryIcon = documentCategories.find((c) => c.value === doc.category)?.icon || Folder
+                    const TypeIcon = documentTypes.find((t) => t.value === doc.document_type)?.icon || File
+                    const AccessIcon = accessLevels.find((a) => a.value === doc.access_level)?.icon || Lock
+                    const FileIcon = getFileTypeIcon(doc.file_url)
+
+                    return (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium flex items-center gap-2">
+                          <FileIcon className="h-5 w-5 text-dark-orange-500" />
+                          {doc.name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <CategoryIcon className="h-3 w-3" /> {doc.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <TypeIcon className="h-3 w-3" /> {doc.document_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <AccessIcon className="h-3 w-3" /> {doc.access_level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{doc.uploaded_by}</TableCell>
+                        <TableCell>{format(new Date(doc.created_at), "PPP")}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleDownloadDocument(doc)}>
+                              <Download className="h-4 w-4" />
+                              <span className="sr-only">Download</span>
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteDocument(doc.id)}>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Document Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">All Documents</TabsTrigger>
-            <TabsTrigger value="contract">Contracts</TabsTrigger>
-            <TabsTrigger value="inspection">Inspections</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Documents List */}
-        <div className="space-y-4">
-          {filteredDocuments.map((document) => (
-            <Card key={document.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <FileText className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{document.name}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                        <span>Client: {document.client}</span>
-                        <span>Property: {document.property}</span>
-                        <span>Size: {document.size}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Badge className={getTypeColor(document.type)}>{document.type}</Badge>
-                        <span className="text-sm text-gray-500">
-                          Uploaded by {document.uploadedBy} • {document.uploadedAt}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                        <DropdownMenuItem>Share</DropdownMenuItem>
-                        <DropdownMenuItem>Move to Folder</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredDocuments.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-              <Button>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Your First Document
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

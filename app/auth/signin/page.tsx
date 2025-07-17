@@ -1,16 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { signIn, getSession, useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
 
 export default function SignIn() {
   const [email, setEmail] = useState("")
@@ -21,6 +21,7 @@ export default function SignIn() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const message = searchParams.get("message")
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -82,13 +83,20 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access the Real Estate CRM</CardDescription>
+          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+          <CardDescription>Enter your credentials to access G3W Real Estate CRM</CardDescription>
         </CardHeader>
         <CardContent>
+          {message && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">{message}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -120,7 +128,7 @@ export default function SignIn() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-dark-orange-600 hover:bg-dark-orange-700" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
@@ -171,6 +179,15 @@ export default function SignIn() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link href="/auth/signup" className="font-medium text-dark-orange-600 hover:text-dark-orange-500">
+                Create one here
+              </Link>
+            </p>
           </div>
         </CardContent>
       </Card>
