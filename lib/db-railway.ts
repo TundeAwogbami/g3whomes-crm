@@ -1,6 +1,19 @@
-// This file is a placeholder for Railway-specific database connection logic.
-// It's not actively used in the current setup which defaults to Neon via `lib/db.ts`.
+import { createClient } from "@libsql/client"
 
-import { neon } from "@neondatabase/serverless"
+const client = createClient({
+  url: process.env.DATABASE_URL!,
+  authToken: process.env.DATABASE_AUTH_TOKEN,
+})
 
-export const sql = neon(process.env.RAILWAY_DATABASE_URL!)
+export async function executeQuery(sql: string, args: any[] = []) {
+  try {
+    const result = await client.execute({
+      sql,
+      args,
+    })
+    return result.rows
+  } catch (error) {
+    console.error("Database error:", error)
+    throw error
+  }
+}

@@ -1,138 +1,94 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/db-supabase"
-import { getSession } from "@/lib/auth"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getDataRecords, createDataRecord, updateDataRecord, deleteDataRecord } from "@/lib/db-supabase"
 
-export async function GET() {
-  const session = await getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get("category") || undefined
+  const record_type = searchParams.get("record_type") || undefined
+  const search = searchParams.get("search") || undefined
+
   try {
-    const { data, error } = await supabaseAdmin
-      .from("data_records")
-      .select("*")
-      .eq("user_id", session.user.id) // Ensure only user's records are fetched
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching data records:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json(data)
+    const records = await getDataRecords(session.user, { category, record_type, search })
+    return NextResponse.json(records)
   } catch (error) {
-    console.error("Unexpected error fetching data records:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("API Error fetching data records:", error)
+    return new NextResponse(JSON.stringify({ message: "Failed to fetch data records" }), { status: 500 })
   }
 }
 
-export async function POST(req: Request) {
-  const session = await getSession()
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+export async function POST(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 })
   }
 
   try {
-    const { record_type, data: recordData } = await req.json()
-
-    if (!record_type || !recordData) {
-      return NextResponse.json({ error: "Record type and data are required" }, { status: 400 })
+    const body = await request.json()
+    const newRecord = await createDataRecord(session.user, body)
+    if (!newRecord) {
+      return new NextResponse(JSON.stringify({ message: "Failed to create data record" }), { status: 500 })
     }
-
-    const { data, error } = await supabaseAdmin
-      .from("data_records")
-      .insert({
-        user_id: session.user.id,
-        record_type,
-        data: recordData,
-      })
-      .select()
-
-    if (error) {
-      console.error("Error inserting data record:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json(data[0], { status: 201 })
+    return NextResponse.json(newRecord, { status: 201 })
   } catch (error) {
-    console.error("Unexpected error creating data record:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("API Error creating data record:", error)
+    return new NextResponse(JSON.stringify({ message: "Failed to create data record" }), { status: 500 })
   }
 }
 
-export async function PUT(req: Request) {
-  const session = await getSession()
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 })
+  }
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+
+  if (!id) {
+    return new NextResponse(JSON.stringify({ message: "Record ID is required" }), { status: 400 })
   }
 
   try {
-    const { id, record_type, data: recordData } = await req.json()
-
-    if (!id || !record_type || !recordData) {
-      return NextResponse.json({ error: "ID, record type, and data are required for update" }, { status: 400 })
+    const body = await request.json()
+    const updatedRecord = await updateDataRecord(session.user, id, body)
+    if (!updatedRecord) {
+      return new NextResponse(JSON.stringify({ message: "Failed to update data record" }), { status: 500 })
     }
-
-    const { data, error } = await supabaseAdmin
-      .from("data_records")
-      .update({ record_type, data: recordData })
-      .eq("id", id)
-      .eq("user_id", session.user.id) // Ensure user can only update their own records
-      .select()
-
-    if (error) {
-      console.error("Error updating data record:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    if (data.length === 0) {
-      return NextResponse.json({ error: "Record not found or unauthorized" }, { status: 404 })
-    }
-
-    return NextResponse.json(data[0])
+    return NextResponse.json(updatedRecord)
   } catch (error) {
-    console.error("Unexpected error updating data record:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("API Error updating data record:", error)
+    return new NextResponse(JSON.stringify({ message: "Failed to update data record" }), { status: 500 })
   }
 }
 
-export async function DELETE(req: Request) {
-  const session = await getSession()
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return new NextResponse(JSON.stringify({ message: "Unauthorized" }), { status: 401 })
+  }
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+
+  if (!id) {
+    return new NextResponse(JSON.stringify({ message: "Record ID is required" }), { status: 400 })
   }
 
   try {
-    const { id } = await req.json()
-
-    if (!id) {
-      return NextResponse.json({ error: "Record ID is required for deletion" }, { status: 400 })
+    const success = await deleteDataRecord(session.user, id)
+    if (!success) {
+      return new NextResponse(JSON.stringify({ message: "Failed to delete data record" }), { status: 500 })
     }
-
-    const { error, count } = await supabaseAdmin
-      .from("data_records")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", session.user.id) // Ensure user can only delete their own records
-      .select()
-
-    if (error) {
-      console.error("Error deleting data record:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    if (count === 0) {
-      return NextResponse.json({ error: "Record not found or unauthorized" }, { status: 404 })
-    }
-
-    return NextResponse.json({ message: "Record deleted successfully" })
+    return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error("Unexpected error deleting data record:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("API Error deleting data record:", error)
+    return new NextResponse(JSON.stringify({ message: "Failed to delete data record" }), { status: 500 })
   }
 }

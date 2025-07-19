@@ -1,35 +1,122 @@
 "use client"
 
-import { TableCell } from "@/components/ui/table"
-
-import { TableBody } from "@/components/ui/table"
-
-import { TableHead } from "@/components/ui/table"
-
-import { TableRow } from "@/components/ui/table"
-
-import { TableHeader } from "@/components/ui/table"
-
-import { Table } from "@/components/ui/table"
-
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Filter } from "lucide-react"
-import { formatCurrency } from "@/lib/currency"
+import { Search, Plus, MapPin, Bed, Bath, Square, Filter, MoreHorizontal, Eye, Edit, Heart } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { formatNaira } from "@/lib/currency"
 import Link from "next/link"
-import { getProperties } from "@/lib/api"
 
-export default async function PropertiesPage() {
-  const properties = await getProperties()
+export default function PropertiesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
 
+  const properties = [
+    {
+      id: 1,
+      title: "Modern Downtown Condo",
+      address: "123 Tiamiyu Savage Street, Victoria Island, Lagos",
+      price: formatNaira(67500000), // ₦67.5M
+      type: "sale",
+      status: "active",
+      bedrooms: 2,
+      bathrooms: 2,
+      sqft: 1200,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "John Doe",
+      listed: "2 weeks ago",
+      views: 45,
+      favorites: 12,
+    },
+    {
+      id: 2,
+      title: "Luxury Family Home",
+      address: "456 Banana Island Road, Ikoyi, Lagos",
+      price: formatNaira(112500000), // ₦112.5M
+      type: "sale",
+      status: "pending",
+      bedrooms: 4,
+      bathrooms: 3,
+      sqft: 2500,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "Jane Smith",
+      listed: "1 month ago",
+      views: 89,
+      favorites: 23,
+    },
+    {
+      id: 3,
+      title: "Investment Property",
+      address: "789 Gwarinpa Estate, Abuja",
+      price: formatNaira(3750000) + "/month", // ₦3.75M/month
+      type: "rent",
+      status: "active",
+      bedrooms: 3,
+      bathrooms: 2,
+      sqft: 1800,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "Mike Johnson",
+      listed: "3 days ago",
+      views: 23,
+      favorites: 8,
+    },
+    {
+      id: 4,
+      title: "Beachfront Villa",
+      address: "321 Lekki Peninsula, Lagos",
+      price: formatNaira(180000000), // ₦180M
+      type: "sale",
+      status: "sold",
+      bedrooms: 5,
+      bathrooms: 4,
+      sqft: 3200,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "Sarah Wilson",
+      listed: "2 months ago",
+      views: 156,
+      favorites: 45,
+    },
+    {
+      id: 5,
+      title: "Urban Loft",
+      address: "654 Yaba Tech Road, Yaba, Lagos",
+      price: formatNaira(57000000), // ₦57M
+      type: "sale",
+      status: "active",
+      bedrooms: 1,
+      bathrooms: 1,
+      sqft: 900,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "John Doe",
+      listed: "1 week ago",
+      views: 34,
+      favorites: 12,
+    },
+    {
+      id: 6,
+      title: "Suburban Townhouse",
+      address: "987 Magodo Phase 2, Lagos",
+      price: formatNaira(42750000), // ₦42.75M
+      type: "sale",
+      status: "active",
+      bedrooms: 3,
+      bathrooms: 2.5,
+      sqft: 1600,
+      image: "/placeholder.svg?height=200&width=300",
+      agent: "Jane Smith",
+      listed: "5 days ago",
+      views: 28,
+      favorites: 9,
+    },
+  ]
+
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
-      property.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.address.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTab = activeTab === "all" || property.type === activeTab || property.status === activeTab
     return matchesSearch && matchesTab
@@ -37,114 +124,178 @@ export default async function PropertiesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "For Sale":
+      case "active":
         return "bg-green-100 text-green-800"
-      case "Sold":
-        return "bg-blue-100 text-blue-800"
-      case "For Rent":
+      case "pending":
         return "bg-yellow-100 text-yellow-800"
+      case "sold":
+        return "bg-blue-100 text-blue-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
   }
 
   return (
-    <div className="flex flex-1 flex-col p-4 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Properties</h1>
-        <Button asChild className="bg-dark-orange-500 hover:bg-dark-orange-600">
-          <Link href="/properties/add">Add Property</Link>
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Property Listings</CardTitle>
-          <CardDescription>Manage your real estate properties.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            {/* Search and Filters */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search properties..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Properties</h1>
+              <p className="text-gray-600">Manage your property listings and inventory</p>
+            </div>
+            <Link href="/properties/add">
+              <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Property
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search properties..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button variant="outline">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Property Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All Properties</TabsTrigger>
+            <TabsTrigger value="sale">For Sale</TabsTrigger>
+            <TabsTrigger value="rent">For Rent</TabsTrigger>
+            <TabsTrigger value="sold">Sold</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Properties Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProperties.map((property) => (
+            <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative">
+                <img
+                  src={property.image || "/placeholder.svg"}
+                  alt={property.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="absolute top-4 left-4">
+                  <Badge className={getStatusColor(property.status)}>{property.status}</Badge>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Property
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg mb-1">{property.title}</CardTitle>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      {property.address}
+                    </div>
                   </div>
-                  <Button variant="outline">
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filter
-                  </Button>
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-green-600">{property.price}</div>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Bed className="w-4 h-4 mr-1" />
+                      {property.bedrooms}
+                    </div>
+                    <div className="flex items-center">
+                      <Bath className="w-4 h-4 mr-1" />
+                      {property.bathrooms}
+                    </div>
+                    <div className="flex items-center">
+                      <Square className="w-4 h-4 mr-1" />
+                      {property.sqft} sqft
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-gray-600 pt-4 border-t">
+                  <div>
+                    <div>Agent: {property.agent}</div>
+                    <div>Listed: {property.listed}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center">
+                        <Eye className="w-4 h-4 mr-1" />
+                        {property.views}
+                      </div>
+                      <div className="flex items-center">
+                        <Heart className="w-4 h-4 mr-1" />
+                        {property.favorites}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          ))}
+        </div>
 
-            {/* Property Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-              <TabsList>
-                <TabsTrigger value="all">All Properties</TabsTrigger>
-                <TabsTrigger value="sale">For Sale</TabsTrigger>
-                <TabsTrigger value="rent">For Rent</TabsTrigger>
-                <TabsTrigger value="sold">Sold</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Address</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Bedrooms</TableHead>
-                <TableHead>Bathrooms</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProperties.map((property) => (
-                <TableRow key={property.id}>
-                  <TableCell className="font-medium">{property.address}</TableCell>
-                  <TableCell>{property.type}</TableCell>
-                  <TableCell>{formatCurrency(property.price)}</TableCell>
-                  <TableCell>{property.status}</TableCell>
-                  <TableCell>{property.bedrooms}</TableCell>
-                  <TableCell>{property.bathrooms}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-red-500">
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {filteredProperties.length === 0 && (
-        <Card className="mt-6">
-          <CardContent className="p-12 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Search className="w-6 h-6 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
-            <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
-            <Button asChild className="bg-dark-orange-500 hover:bg-dark-orange-600">
-              <Link href="/properties/add">Add Your First Property</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+        {filteredProperties.length === 0 && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Search className="w-6 h-6 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
+              <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
+              <Link href="/properties/add">
+                <Button className="bg-dark-orange-600 hover:bg-dark-orange-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Property
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

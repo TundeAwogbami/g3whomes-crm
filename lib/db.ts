@@ -1,10 +1,26 @@
 import { neon } from "@neondatabase/serverless"
-import { Pool } from "@neondatabase/serverless"
 
-// For use with Next.js App Router and Server Components
-export const sql = neon(process.env.RAILWAY_DATABASE_URL!)
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set")
+}
 
-// For use with Next.js API Routes or other environments that require a Pool
-export const pool = new Pool({
-  connectionString: process.env.RAILWAY_DATABASE_URL!,
-})
+// Create a reusable SQL client
+export const sql = neon(process.env.DATABASE_URL)
+
+// Database connection test function
+export async function testConnection() {
+  try {
+    const result = await sql`SELECT NOW() as current_time`
+    console.log("Database connected successfully:", result[0].current_time)
+    return true
+  } catch (error) {
+    console.error("Database connection failed:", error)
+    return false
+  }
+}
+
+// Helper function to handle database errors
+export function handleDbError(error: any) {
+  console.error("Database error:", error)
+  throw new Error("Database operation failed")
+}

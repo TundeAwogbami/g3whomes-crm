@@ -1,41 +1,12 @@
 import { Loader2 } from "lucide-react"
 
-export default function SignUpLoading() {
+export default function Loading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950">
-      <Loader2 className="h-8 w-8 animate-spin text-dark-orange-500" />
-      {/* <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl">
-            <Skeleton className="h-8 w-48 mx-auto" />
-          </CardTitle>
-          <Skeleton className="h-4 w-64 mx-auto mt-2" />
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="grid gap-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-4 w-48 mx-auto mt-2" />
-        </CardContent>
-      </Card> */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-dark-orange-600" />
+        <p className="text-gray-600">Loading registration form...</p>
+      </div>
     </div>
   )
 }

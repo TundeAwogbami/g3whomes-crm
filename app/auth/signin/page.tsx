@@ -1,100 +1,116 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { signIn, getSession, useSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
 
-export default function SignInPage() {
+export default function SignIn() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
+  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const message = searchParams.get("message")
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.push(callbackUrl)
+    }
+  }, [session, status, router, callbackUrl])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setLoading(true)
+    setIsLoading(true)
+    setError("")
 
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    })
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl,
+      })
 
-    if (result?.error) {
-      setError(result.error)
-      toast({
-        title: "Login Failed",
-        description: result.error,
-        variant: "destructive",
-      })
-    } else {
-      toast({
-        title: "Login Successful",
-        description: "You have been successfully logged in.",
-      })
-      router.push("/")
+      if (result?.error) {
+        setError("Invalid email or password")
+      } else if (result?.ok) {
+        // Force a session refresh
+        await getSession()
+        router.push(callbackUrl)
+        router.refresh()
+      }
+    } catch (error) {
+      console.error("Sign in error:", error)
+      setError("An error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-    setLoading(false)
   }
 
-  const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
-    setLoading(true)
-    setError(null)
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: demoEmail,
-      password: demoPassword,
-    })
-
-    if (result?.error) {
-      setError(result.error)
-      toast({
-        title: "Demo Login Failed",
-        description: result.error,
-        variant: "destructive",
-      })
+  // Quick fill demo credentials
+  const fillDemoCredentials = (userType: "agent" | "admin") => {
+    if (userType === "agent") {
+      setEmail("john.doe@realestate.com")
+      setPassword("password123")
     } else {
-      toast({
-        title: "Demo Login Successful",
-        description: "You are logged in as a demo user.",
-      })
-      router.push("/")
+      setEmail("admin@realestate.com")
+      setPassword("password123")
     }
-    setLoading(false)
+  }
+
+  // Show loading if checking session
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-dark-orange-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access your account.</CardDescription>
+          <CardDescription>Enter your credentials to access G3W Real Estate CRM</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
+          {message && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">{message}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
+                placeholder="john.doe@realestate.com"
               />
             </div>
-            <div className="grid gap-2">
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -102,36 +118,76 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
+                placeholder="password123"
               />
             </div>
-            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-            <Button type="submit" className="w-full bg-dark-orange-500 hover:bg-dark-orange-600" disabled={loading}>
-              {loading ? "Signing In..." : "Sign In"}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <Button type="submit" className="w-full bg-dark-orange-600 hover:bg-dark-orange-700" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
             </Button>
           </form>
-          <div className="mt-4 space-y-2">
-            <Button
-              variant="outline"
-              className="w-full bg-transparent"
-              onClick={() => handleDemoLogin("agent@example.com", "password123")}
-              disabled={loading}
-            >
-              Demo Agent Account
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full bg-transparent"
-              onClick={() => handleDemoLogin("admin@example.com", "password123")}
-              disabled={loading}
-            >
-              Demo Admin Account
-            </Button>
+
+          <div className="mt-6 space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Demo Accounts</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials("agent")}
+                disabled={isLoading}
+              >
+                Agent Demo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fillDemoCredentials("admin")}
+                disabled={isLoading}
+              >
+                Admin Demo
+              </Button>
+            </div>
+
+            <div className="text-center text-sm text-gray-600 space-y-1">
+              <p className="font-medium">Demo Credentials:</p>
+              <div className="bg-gray-50 p-3 rounded-md text-left">
+                <p>
+                  <strong>Agent:</strong> john.doe@realestate.com
+                </p>
+                <p>
+                  <strong>Admin:</strong> admin@realestate.com
+                </p>
+                <p>
+                  <strong>Password:</strong> password123
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
-            <Link href="/auth/signup" className="underline text-dark-orange-500 hover:text-dark-orange-600">
-              Sign up
-            </Link>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link href="/auth/signup" className="font-medium text-dark-orange-600 hover:text-dark-orange-500">
+                Create one here
+              </Link>
+            </p>
           </div>
         </CardContent>
       </Card>

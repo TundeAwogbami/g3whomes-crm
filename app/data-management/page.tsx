@@ -1,148 +1,177 @@
 "use client"
 
-import { DialogDescription } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import * as React from "react"
+import { Plus, Search, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import type { DataRecord } from "@/lib/db-supabase"
 
-interface DataRecord {
-  id: string
-  record_type: string
-  data: Record<string, any>
-  created_at: string
-  updated_at: string
-}
+const recordCategories = ["Client", "Staff", "Affiliate", "Medical", "Financial", "Property", "Legal"]
+const recordTypes = [
+  "Personal Info",
+  "Payroll",
+  "Health Report",
+  "Contract Details",
+  "Valuation",
+  "Compliance",
+  "Performance Review",
+  "Other",
+]
+const accessLevels = ["Public", "Internal", "Confidential", "Restricted"]
 
 export default function DataManagementPage() {
-  const [records, setRecords] = useState<DataRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentRecord, setCurrentRecord] = useState<DataRecord | null>(null)
-  const [recordType, setRecordType] = useState("")
-  const [recordData, setRecordData] = useState("") // JSON string
-  const [submitting, setSubmitting] = useState(false)
+  const { data: session } = useSession()
+  const router = useRouter()
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchRecords()
-  }, [])
+  const [records, setRecords] = React.useState<DataRecord[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [searchTerm, setSearchTerm] = React.useState("")
+  const [selectedCategory, setSelectedCategory] = React.useState<string | undefined>(undefined)
+  const [selectedRecordType, setSelectedRecordType] = React.useState<string | undefined>(undefined)
+  const [currentRecord, setCurrentRecord] = React.useState<Partial<DataRecord>>({
+    title: "",
+    category: "",
+    record_type: "",
+    data: {},
+    access_level: "Internal",
+    tags: [],
+  })
+  const [isRecordDialogOpen, setIsRecordDialogOpen] = React.useState(false)
+  const [isEditing, setIsEditing] = React.useState(false)
+
+  React.useEffect(() => {
+    if (session?.user) {
+      fetchRecords()
+    }
+  }, [session])
 
   const fetchRecords = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/data-records")
-      if (!response.ok) {
+      const queryParams = new URLSearchParams()
+      if (selectedCategory) queryParams.append("category", selectedCategory)
+      if (selectedRecordType) queryParams.append("record_type", selectedRecordType)
+      if (searchTerm) queryParams.append("search", searchTerm)
+
+      const res = await fetch(`/api/data-records?${queryParams.toString()}`)
+      if (!res.ok) {
         throw new Error("Failed to fetch data records")
       }
-      const data = await response.json()
+      const data = await res.json()
       setRecords(data)
     } catch (error) {
-      console.error("Error fetching data records:", error)
       toast({
         title: "Error",
         description: "Failed to load data records.",
         variant: "destructive",
       })
+      console.error("Error fetching data records:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAddClick = () => {
-    setCurrentRecord(null)
-    setRecordType("")
-    setRecordData("")
-    setIsModalOpen(true)
+  const handleOpenDialog = (record?: DataRecord) => {
+    if (record) {
+      setCurrentRecord(record)
+      setIsEditing(true)
+    } else {
+      setCurrentRecord({
+        title: "",
+        category: "",
+        record_type: "",
+        data: {},
+        access_level: "Internal",
+        tags: [],
+      })
+      setIsEditing(false)
+    }
+    setIsRecordDialogOpen(true)
   }
 
-  const handleEditClick = (record: DataRecord) => {
-    setCurrentRecord(record)
-    setRecordType(record.record_type)
-    setRecordData(JSON.stringify(record.data, null, 2)) // Pretty print JSON
-    setIsModalOpen(true)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveRecord = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
+    if (!session?.user) {
+      toast({
+        title: "Unauthorized",
+        description: "Please sign in to manage records.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
-      let parsedData: Record<string, any>
-      try {
-        parsedData = JSON.parse(recordData)
-      } catch (jsonError) {
-        toast({
-          title: "Invalid JSON",
-          description: "Please enter valid JSON data.",
-          variant: "destructive",
-        })
-        setSubmitting(false)
-        return
-      }
+      const method = isEditing ? "PUT" : "POST"
+      const url = isEditing ? `/api/data-records?id=${currentRecord.id}` : "/api/data-records"
 
-      const method = currentRecord ? "PUT" : "POST"
-      const url = "/api/data-records"
-      const body = currentRecord
-        ? JSON.stringify({ id: currentRecord.id, record_type: recordType, data: parsedData })
-        : JSON.stringify({ record_type: recordType, data: parsedData })
-
-      const response = await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body,
+        body: JSON.stringify(currentRecord),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to save record")
+      if (!res.ok) {
+        throw new Error(`Failed to ${isEditing ? "update" : "add"} record`)
       }
 
       toast({
         title: "Success",
-        description: `Record ${currentRecord ? "updated" : "added"} successfully.`,
+        description: `Record ${isEditing ? "updated" : "added"} successfully.`,
       })
-      setIsModalOpen(false)
+      setIsRecordDialogOpen(false)
       fetchRecords()
-    } catch (error: any) {
-      console.error("Error saving record:", error)
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to save record.",
+        description: `Failed to ${isEditing ? "update" : "add"} record.`,
         variant: "destructive",
       })
-    } finally {
-      setSubmitting(false)
+      console.error(`Error ${isEditing ? "updating" : "adding"} record:`, error)
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteRecord = async (id: string) => {
+    if (!session?.user) {
+      toast({
+        title: "Unauthorized",
+        description: "Please sign in to delete records.",
+        variant: "destructive",
+      })
+      return
+    }
+
     if (!confirm("Are you sure you want to delete this record?")) {
       return
     }
 
     try {
-      const response = await fetch("/api/data-records", {
+      const res = await fetch(`/api/data-records?id=${id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to delete record")
+      if (!res.ok) {
+        throw new Error("Failed to delete record")
       }
 
       toast({
@@ -150,114 +179,245 @@ export default function DataManagementPage() {
         description: "Record deleted successfully.",
       })
       fetchRecords()
-    } catch (error: any) {
-      console.error("Error deleting record:", error)
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete record.",
+        description: "Failed to delete record.",
         variant: "destructive",
       })
+      console.error("Error deleting record:", error)
     }
   }
 
   return (
-    <div className="flex flex-1 flex-col p-4 md:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Data Records</h1>
-        <Button onClick={handleAddClick} className="bg-dark-orange-500 hover:bg-dark-orange-600">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Record
+    <div className="flex flex-col gap-6 p-4 lg:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Data Management</h1>
+        <Button onClick={() => handleOpenDialog()}>
+          <Plus className="mr-2 h-4 w-4" /> Add Record
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Custom Data Records</CardTitle>
-          <CardDescription>Manage flexible data structures for various purposes.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-dark-orange-500" />
-            </div>
-          ) : records.length === 0 ? (
-            <p className="text-center text-muted-foreground">No data records found.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Record Type</TableHead>
-                  <TableHead>Data (JSON)</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Updated At</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.id.substring(0, 8)}...</TableCell>
-                    <TableCell>{record.record_type}</TableCell>
-                    <TableCell className="max-w-[300px] truncate text-xs font-mono">
-                      {JSON.stringify(record.data)}
-                    </TableCell>
-                    <TableCell>{new Date(record.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(record.updated_at).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(record)}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(record.id)}
-                        className="text-red-500"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search records..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") fetchRecords()
+            }}
+            className="pl-9 pr-4 py-2 rounded-md border border-input focus:ring-2 focus:ring-dark-orange-500 focus:border-dark-orange-500 w-full"
+          />
+        </div>
+        <Select onValueChange={setSelectedCategory} value={selectedCategory}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Filter by Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {recordCategories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={setSelectedRecordType} value={selectedRecordType}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Filter by Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            {recordTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={fetchRecords}>Apply Filters</Button>
+      </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-6 w-6 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : records.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">No data records found.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {records.map((record) => (
+            <Card key={record.id}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">{record.title}</CardTitle>
+                <Badge variant="secondary">{record.access_level}</Badge>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm text-gray-500">Category: {record.category}</p>
+                {record.record_type && <p className="text-sm text-gray-500">Type: {record.record_type}</p>}
+                <div className="text-sm text-gray-700 max-h-20 overflow-hidden">
+                  <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-2 rounded-md">
+                    {JSON.stringify(record.data, null, 2)}
+                  </pre>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {record.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" size="sm" onClick={() => handleOpenDialog(record)}>
+                    <Edit className="h-4 w-4 mr-1" /> Edit
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteRecord(record.id)}>
+                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={isRecordDialogOpen} onOpenChange={setIsRecordDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{currentRecord ? "Edit Data Record" : "Add New Data Record"}</DialogTitle>
+            <DialogTitle>{isEditing ? "Edit Record" : "Add New Record"}</DialogTitle>
             <DialogDescription>
-              {currentRecord ? "Modify the details of this data record." : "Create a new flexible data record."}
+              {isEditing ? "Edit the details of this record." : "Fill in the details for the new record."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="record-type">Record Type</Label>
-              <Input id="record-type" value={recordType} onChange={(e) => setRecordType(e.target.value)} required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="record-data">Data (JSON)</Label>
-              <Textarea
-                id="record-data"
-                value={recordData}
-                onChange={(e) => setRecordData(e.target.value)}
-                placeholder='e.g., {"key": "value", "number": 123}'
-                className="min-h-[150px] font-mono text-xs"
+          <form onSubmit={handleSaveRecord} className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="title"
+                value={currentRecord.title || ""}
+                onChange={(e) => setCurrentRecord({ ...currentRecord, title: e.target.value })}
+                className="col-span-3"
                 required
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                Category
+              </Label>
+              <Select
+                onValueChange={(value) => setCurrentRecord({ ...currentRecord, category: value })}
+                value={currentRecord.category}
+                required
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recordCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="record_type" className="text-right">
+                Record Type
+              </Label>
+              <Select
+                onValueChange={(value) => setCurrentRecord({ ...currentRecord, record_type: value })}
+                value={currentRecord.record_type}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a record type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recordTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="data" className="text-right">
+                Data (JSON)
+              </Label>
+              <Textarea
+                id="data"
+                value={JSON.stringify(currentRecord.data, null, 2)}
+                onChange={(e) => {
+                  try {
+                    setCurrentRecord({ ...currentRecord, data: JSON.parse(e.target.value) })
+                  } catch (error) {
+                    // Handle invalid JSON input
+                    console.error("Invalid JSON:", error)
+                  }
+                }}
+                className="col-span-3 min-h-[100px]"
+                placeholder='{"key": "value"}'
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="access_level" className="text-right">
+                Access Level
+              </Label>
+              <Select
+                onValueChange={(value) =>
+                  setCurrentRecord({
+                    ...currentRecord,
+                    access_level: value as "Public" | "Internal" | "Confidential" | "Restricted",
+                  })
+                }
+                value={currentRecord.access_level}
+                required
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select access level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accessLevels.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="tags" className="text-right">
+                Tags (comma-separated)
+              </Label>
+              <Input
+                id="tags"
+                value={currentRecord.tags?.join(", ") || ""}
+                onChange={(e) =>
+                  setCurrentRecord({ ...currentRecord, tags: e.target.value.split(",").map((tag) => tag.trim()) })
+                }
+                className="col-span-3"
+              />
+            </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={submitting} className="bg-dark-orange-500 hover:bg-dark-orange-600">
-                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {currentRecord ? "Save Changes" : "Create Record"}
-              </Button>
+              <Button type="submit">{isEditing ? "Save Changes" : "Add Record"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

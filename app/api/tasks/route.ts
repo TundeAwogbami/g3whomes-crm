@@ -1,30 +1,30 @@
-import { sql } from "@/lib/db"
 import { type NextRequest, NextResponse } from "next/server"
+import { getTasks, createTask } from "@/lib/db-supabase"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const tasks = await sql`SELECT * FROM tasks ORDER BY created_at DESC`
+    const { searchParams } = new URL(request.url)
+    const filters = {
+      status: searchParams.get("status") || undefined,
+      assigned_to: searchParams.get("assigned_to") ? Number.parseInt(searchParams.get("assigned_to")!) : undefined,
+      priority: searchParams.get("priority") || undefined,
+    }
+
+    const tasks = await getTasks(filters)
     return NextResponse.json(tasks)
   } catch (error) {
-    console.error("Error fetching tasks:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error("API Error:", error)
+    return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { deal_id, contact_id, title, description, due_date, status } = await request.json()
-    if (!title) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 })
-    }
-    const newTask = await sql`
-      INSERT INTO tasks (deal_id, contact_id, title, description, due_date, status)
-      VALUES (${deal_id}, ${contact_id}, ${title}, ${description}, ${due_date}, ${status})
-      RETURNING *;
-    `
-    return NextResponse.json(newTask[0], { status: 201 })
+    const body = await request.json()
+    const task = await createTask(body)
+    return NextResponse.json(task, { status: 201 })
   } catch (error) {
-    console.error("Error creating task:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error("API Error:", error)
+    return NextResponse.json({ error: "Failed to create task" }, { status: 500 })
   }
 }

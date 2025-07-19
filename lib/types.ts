@@ -1,69 +1,91 @@
-export type Contact = {
-  id: string
-  name: string
+export interface User {
+  id: number
   email: string
+  first_name: string
+  last_name: string
+  role: "agent" | "admin"
   phone?: string
-  address?: string
+  avatar_url?: string
   created_at: string
+  updated_at: string
 }
 
-export type Property = {
-  id: string
-  address: string
+export interface Contact {
+  id: number
+  first_name: string
+  last_name: string
+  email?: string
+  phone?: string
+  type: "buyer" | "seller" | "investor" | "lead"
+  status: "active" | "qualified" | "lead" | "inactive"
+  address?: string
   city?: string
   state?: string
   zip_code?: string
-  price?: number
-  status?: string
+  notes?: string
+  assigned_agent_id?: number
   created_at: string
+  updated_at: string
 }
 
-export type Deal = {
-  id: string
-  property_id?: string
-  contact_id?: string
-  deal_value?: number
-  stage?: string
-  close_date?: string
-  created_at: string
-}
-
-export type Task = {
-  id: string
-  deal_id?: string
-  contact_id?: string
+export interface Property {
+  id: number
   title: string
   description?: string
+  address: string
+  city: string
+  state: string
+  zip_code: string
+  price?: number
+  property_type: "house" | "condo" | "townhouse" | "apartment" | "commercial" | "land"
+  listing_type: "sale" | "rent" | "lease" | "vacant"
+  status: "active" | "pending" | "sold" | "rented" | "withdrawn"
+  bedrooms?: number
+  bathrooms?: number
+  square_feet?: number
+  lot_size?: number
+  year_built?: number
+  garage_spaces?: number
+  features?: string[]
+  images?: string[]
+  virtual_tour_url?: string
+  listing_agent_id?: number
+  owner_contact_id?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Deal {
+  id: number
+  title: string
+  contact_id: number
+  property_id?: number
+  agent_id: number
+  deal_value?: number
+  commission_rate?: number
+  commission_amount?: number
+  stage: "lead" | "qualified" | "proposal" | "negotiation" | "closed" | "lost"
+  probability: number
+  expected_close_date?: string
+  actual_close_date?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Task {
+  id: number
+  title: string
+  description?: string
+  task_type: "call" | "email" | "showing" | "meeting" | "paperwork" | "research" | "follow_up"
+  priority: "low" | "medium" | "high"
+  status: "pending" | "in_progress" | "completed" | "cancelled"
   due_date?: string
-  status?: string
+  completed_at?: string
+  assigned_to: number
+  contact_id?: number
+  property_id?: number
+  deal_id?: number
   created_at: string
-}
-
-export type UserRole = "admin" | "user" | "agent"
-
-export type UserProfile = {
-  id: string
-  email: string
-  name?: string
-  role: UserRole
-  phone?: string
-  address?: string
-  bio?: string
-  created_at: string
-}
-
-export type Document = {
-  id: string
-  user_id: string
-  file_name: string
-  file_url: string
-  uploaded_at: string
-}
-
-export type DataRecord = {
-  id: string
-  user_id: string
-  record_type: string
-  data_content: string
-  created_at: string
+  updated_at: string
 }

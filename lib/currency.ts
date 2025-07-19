@@ -1,11 +1,24 @@
 // Currency formatting utilities for Nigerian Naira
-export function formatNaira(amount: number): string {
+export function formatNaira(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined || amount === "") {
+    return "₦0"
+  }
+
+  const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+
+  if (isNaN(numAmount)) {
+    return "₦0"
+  }
+
+  // Format with Nigerian number formatting (commas for thousands)
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+    .format(numAmount)
+    .replace("NGN", "₦")
 }
 
 // Format Naira with decimal places for precise amounts
