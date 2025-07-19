@@ -1,90 +1,47 @@
 "use client"
 
+import { TableHeader as UI_TableHeader } from "@/components/ui/table"
+import { Table, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Plus, DollarSign, Calendar, User, Home, TrendingUp, Clock, CheckCircle } from "lucide-react"
+import {
+  Search,
+  DollarSign,
+  Calendar,
+  User,
+  Home,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  Plus,
+  PlusCircle,
+  Users,
+  CreditCard,
+  Activity,
+} from "lucide-react"
 import { formatNaira, calculateCommission } from "@/lib/currency"
+import type { Deal } from "@/lib/types"
+import useSWR from "swr"
+import { getDeals } from "@/lib/api"
 
-export default function DealsPage() {
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+export default async function DealsPage() {
+  const dealsData = await getDeals()
+  const { data: deals, error } = useSWR<Deal[]>("/api/deals", fetcher)
   const [searchTerm, setSearchTerm] = useState("")
 
-  const deals = [
-    {
-      id: 1,
-      title: "Downtown Condo Sale",
-      client: "John Smith",
-      property: "123 Tiamiyu Savage Street",
-      value: formatNaira(67500000), // ₦67.5M
-      commission: formatNaira(calculateCommission(67500000)), // ₦3.375M (5%)
-      stage: "negotiation",
-      progress: 75,
-      probability: 85,
-      closeDate: "Dec 25, 2024",
-      agent: "Sarah Wilson",
-      lastActivity: "2 hours ago",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 2,
-      title: "Family Home Purchase",
-      client: "Emma Johnson",
-      property: "456 Banana Island Road",
-      value: formatNaira(112500000), // ₦112.5M
-      commission: formatNaira(calculateCommission(112500000)), // ₦5.625M (5%)
-      stage: "qualified",
-      progress: 50,
-      probability: 70,
-      closeDate: "Jan 15, 2025",
-      agent: "Mike Davis",
-      lastActivity: "1 day ago",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 3,
-      title: "Investment Property",
-      client: "Robert Brown",
-      property: "789 Gwarinpa Estate",
-      value: formatNaira(48000000), // ₦48M
-      commission: formatNaira(calculateCommission(48000000)), // ₦2.4M (5%)
-      stage: "proposal",
-      progress: 25,
-      probability: 45,
-      closeDate: "Feb 10, 2025",
-      agent: "Lisa Garcia",
-      lastActivity: "3 days ago",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    {
-      id: 4,
-      title: "Luxury Villa Sale",
-      client: "David Wilson",
-      property: "321 Lekki Peninsula",
-      value: formatNaira(180000000), // ₦180M
-      commission: formatNaira(calculateCommission(180000000)), // ₦9M (5%)
-      stage: "closed",
-      progress: 100,
-      probability: 100,
-      closeDate: "Dec 10, 2024",
-      agent: "John Doe",
-      lastActivity: "1 week ago",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-  ]
+  const totalDealValue = dealsData.reduce((sum, deal) => sum + (deal.deal_value || 0), 0)
+  const pendingDeals = dealsData.filter((deal) => deal.stage !== "Closed Won" && deal.stage !== "Closed Lost").length
+  const closedWonDeals = dealsData.filter((deal) => deal.stage === "Closed Won").length
+  const averageDealValue = dealsData.length > 0 ? totalDealValue / dealsData.length : 0
 
-  const pipelineStages = [
-    { name: "Lead", count: 15, value: formatNaira(3150000000) }, // ₦3.15B
-    { name: "Qualified", count: 8, value: formatNaira(2700000000) }, // ₦2.7B
-    { name: "Proposal", count: 5, value: formatNaira(1800000000) }, // ₦1.8B
-    { name: "Negotiation", count: 3, value: formatNaira(1425000000) }, // ₦1.425B
-    { name: "Closed", count: 2, value: formatNaira(975000000) }, // ₦975M
-  ]
-
-  const filteredDeals = deals.filter(
+  const filteredDeals = dealsData.filter(
     (deal) =>
       deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       deal.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,6 +82,9 @@ export default function DealsPage() {
     }
   }
 
+  if (error) return <div>Failed to load deals</div>
+  if (!deals) return <div>Loading deals...</div>
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -136,7 +96,7 @@ export default function DealsPage() {
               <p className="text-gray-600">Track and manage your sales opportunities</p>
             </div>
             <Button>
-              <Plus className="w-4 h-4 mr-2" />
+              <PlusCircle className="w-4 h-4 mr-2" />
               Add Deal
             </Button>
           </div>
@@ -146,15 +106,47 @@ export default function DealsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Pipeline Overview */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          {pipelineStages.map((stage, index) => (
-            <Card key={index}>
-              <CardContent className="p-4 text-center">
-                <h3 className="font-semibold text-gray-900 mb-2">{stage.name}</h3>
-                <div className="text-2xl font-bold text-blue-600 mb-1">{stage.count}</div>
-                <div className="text-sm text-gray-600">{stage.value}</div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Deals Overview Cards */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Deal Value</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNaira(totalDealValue)}</div>
+              <p className="text-xs text-muted-foreground">Sum of all deal values</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Deals</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pendingDeals}</div>
+              <p className="text-xs text-muted-foreground">Deals not yet closed</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Closed Won Deals</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{closedWonDeals}</div>
+              <p className="text-xs text-muted-foreground">Successfully closed deals</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Deal Value</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatNaira(averageDealValue)}</div>
+              <p className="text-xs text-muted-foreground">Average value per deal</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
@@ -203,8 +195,10 @@ export default function DealsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-bold text-green-600">{deal.value}</div>
-                    <div className="text-sm text-gray-600">Commission: {deal.commission}</div>
+                    <div className="text-xl font-bold text-green-600">{formatNaira(deal.deal_value || 0)}</div>
+                    <div className="text-sm text-gray-600">
+                      Commission: {formatNaira(calculateCommission(deal.deal_value || 0))}
+                    </div>
                   </div>
                 </div>
 
@@ -219,26 +213,26 @@ export default function DealsPage() {
                   <div>
                     <label className="text-sm font-medium text-gray-600">Progress</label>
                     <div className="mt-1">
-                      <Progress value={deal.progress} className="h-2" />
-                      <span className="text-sm text-gray-600">{deal.progress}%</span>
+                      <Progress value={deal.progress || 0} className="h-2" />
+                      <span className="text-sm text-gray-600">{deal.progress || 0}%</span>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Probability</label>
-                    <div className="text-lg font-semibold text-gray-900 mt-1">{deal.probability}%</div>
+                    <div className="text-lg font-semibold text-gray-900 mt-1">{deal.probability || 0}%</div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Close Date</label>
                     <div className="flex items-center text-gray-900 mt-1">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {deal.closeDate}
+                      {deal.close_date}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="text-sm text-gray-600">
-                    Agent: {deal.agent} • Last activity: {deal.lastActivity}
+                    Agent: {deal.agent} • Last activity: {deal.last_activity}
                   </div>
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm">
@@ -259,12 +253,69 @@ export default function DealsPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">No deals found</h3>
               <p className="text-gray-600 mb-4">Try adjusting your search criteria</p>
               <Button>
-                <Plus className="w-4 h-4 mr-2" />
+                <PlusCircle className="h-4 w-4 mr-2" />
                 Create Your First Deal
               </Button>
             </CardContent>
           </Card>
         )}
+
+        {/* Deals Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Deals</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <UI_TableHeader>
+                <TableRow>
+                  <TableHead>Property Address</TableHead>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Closing Date</TableHead>
+                </TableRow>
+              </UI_TableHeader>
+              <TableBody>
+                {deals.map((deal) => (
+                  <TableRow key={deal.id}>
+                    <TableCell>{deal.property}</TableCell>
+                    <TableCell>{deal.client}</TableCell>
+                    <TableCell>{formatNaira(deal.deal_value || 0)}</TableCell>
+                    <TableCell>{deal.stage}</TableCell>
+                    <TableCell>{deal.close_date}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Updated Deals Section */}
+        <div className="flex flex-col gap-4 p-4 md:p-6 mt-8">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Deals</h1>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Deal
+            </Button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {deals.map((deal) => (
+              <Card key={deal.id}>
+                <CardHeader>
+                  <CardTitle>{deal.property}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500">Client: {deal.client}</p>
+                  <p className="text-sm text-gray-500">Value: {formatNaira(deal.deal_value || 0)}</p>
+                  <p className="text-sm text-gray-500">Status: {deal.stage}</p>
+                  <p className="text-sm text-gray-500">Close Date: {deal.close_date}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

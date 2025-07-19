@@ -1,77 +1,64 @@
 import NextAuth from "next-auth"
-import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { sql } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { getUserByEmail, verifyPassword } from "@/lib/auth"
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
+        if (!credentials?.email || !credentials.password) {
+          throw new Error("Please enter your email and password.")
         }
 
-        try {
-          // Find user in database
-          const users = await sql`
-            SELECT * FROM users WHERE email = ${credentials.email}
-          `
+        const user = await getUserByEmail(credentials.email)
 
-          if (users.length === 0) {
-            return null
-          }
+        if (!user || !(await verifyPassword(credentials.password, user.password))) {
+          throw new Error("Invalid email or password.")
+        }
 
-          const user = users[0]
-
-          // Verify password
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
-
-          if (!isPasswordValid) {
-            return null
-          }
-
-          // Return user object
-          return {
-            id: user.id.toString(),
-            email: user.email,
-            name: `${user.first_name} ${user.last_name}`,
-            role: user.role,
-          }
-        } catch (error) {
-          console.error("Authentication error:", error)
-          return null
+        return {
+          id: user.id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
         }
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
         token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
+        session.user.id = token.id as string
+        session.user.email = token.email
+        session.user.name = token.name
+        session.user.role = token.role
       }
       return session
     },
   },
-  pages: {
-    signIn: "/auth/signin",
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   },
-}
+  secret: process.env.NEXTAUTH_SECRET,
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

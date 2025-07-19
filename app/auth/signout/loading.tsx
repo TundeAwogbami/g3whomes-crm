@@ -2,11 +2,8 @@ import { Loader2 } from "lucide-react"
 
 export default function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-dark-orange-600" />
-        <p className="text-gray-600">Loading sign out page...</p>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-950">
+      <Loader2 className="h-8 w-8 animate-spin text-dark-orange-500" />
     </div>
   )
 }
