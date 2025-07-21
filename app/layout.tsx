@@ -1,31 +1,47 @@
+import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import Navigation from "@/components/navigation"
-import AuthProvider from "@/components/auth-provider"
+import { Navigation } from "@/components/navigation" // This import should match the named export
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Real Estate CRM",
-  description: "Comprehensive CRM system for real estate professionals",
+  title: "G3W Homes CRM",
+  description: "Your comprehensive CRM for real estate management.",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
-          <div className="flex h-screen bg-gray-50">
+        <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
+          <div className="hidden border-r bg-muted/40 lg:block">
             <Navigation />
-            <main className="flex-1 lg:ml-64 overflow-auto">{children}</main>
           </div>
-        </AuthProvider>
+          <div className="flex flex-col">
+            <header className="flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+              <div className="flex-1 text-lg font-semibold lg:hidden">G3W Homes CRM</div>
+              <div className="ml-auto flex items-center gap-2">
+                <Button size="sm" className="h-8 gap-1">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Client</span>
+                </Button>
+                <Button size="sm" className="h-8 gap-1">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Property</span>
+                </Button>
+              </div>
+            </header>
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
+          </div>
+        </div>
       </body>
     </html>
   )
