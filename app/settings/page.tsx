@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch" // Assuming shadcn/ui switch component
 
 export default function SettingsPage() {
   return (
@@ -50,6 +51,26 @@ export default function SettingsPage() {
           </CardContent>
           <CardFooter>
             <Button>Change Password</Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Settings</CardTitle>
+            <CardDescription>Manage your notification preferences.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-notifications">Email Notifications</Label>
+              <Switch id="email-notifications" defaultChecked />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sms-notifications">SMS Notifications</Label>
+              <Switch id="sms-notifications" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button>Save Notifications</Button>
           </CardFooter>
         </Card>
       </div>
