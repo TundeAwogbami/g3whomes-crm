@@ -1,12 +1,11 @@
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Navigation } from "@/components/navigation"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { AuthProvider } from "@/components/auth-provider" // Import the new AuthProvider
+import { Building } from "lucide-react" // Import Building icon for the header
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,18 +24,30 @@ export default function RootLayout({
       <body className={inter.className}>
         {/* Wrap the entire app with AuthProvider */}
         <AuthProvider>
-          <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
-            <div className="hidden border-r bg-muted/40 lg:block">
-              <Navigation />
-            </div>
-            <div className="flex flex-col">
-              <header className="flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
-                <div className="flex-1 text-lg font-semibold lg:hidden">G3W Homes CRM</div>
-                <div className="ml-auto flex items-center gap-2">
-                </div>
-              </header>
-              <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
-            </div>
+          <div className="flex min-h-screen w-full flex-col">
+            {" "}
+            {/* Adjusted layout for no sidebar */}
+            <header className="flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
+              <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                <Building className="h-6 w-6" />
+                <span className="text-lg">G3W Homes CRM</span> {/* Always visible title */}
+              </Link>
+              <div className="ml-auto flex items-center gap-2">
+                {/* Sign Up Button */}
+                <Link href="/auth/signup">
+                  <Button size="sm" className="h-8">
+                    <span className="whitespace-nowrap">Sign Up</span>
+                  </Button>
+                </Link>
+                {/* Sign In Button */}
+                <Link href="/auth/signin">
+                  <Button size="sm" className="h-8">
+                    <span className="whitespace-nowrap">Sign In</span>
+                  </Button>
+                </Link>
+              </div>
+            </header>
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
           </div>
         </AuthProvider>
       </body>

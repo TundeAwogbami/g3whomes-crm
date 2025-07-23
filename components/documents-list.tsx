@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Upload, Download, FileText } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { uploadDocument, getDocuments } from "@/app/documents/action" // Import actions
-import { useActionState } from "react"
+import { useFormState, useFormStatus } from "react-dom" // Correct import for useFormState and useFormStatus
 import { Input } from "@/components/ui/input"
 import { useSession } from "next-auth/react" // To get current user for uploadedBy
-import { createClient } from "@/app/supabase-client" // Declare the variable before using it
+import { createBrowserClient } from "@supabase/ssr"
 
 interface Document {
   id: string
@@ -29,7 +29,8 @@ export function DocumentsList() {
   const [fileName, setFileName] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [documents, setDocuments] = useState<Document[]>([])
-  const [state, formAction, isPending] = useActionState(uploadDocument, null)
+  const { pending } = useFormStatus() // Get pending status
+  const [state, formAction] = useFormState(uploadDocument, null) // Use useFormState
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -67,9 +68,7 @@ export function DocumentsList() {
   }
 
   const handleDownload = (path: string) => {
-    // In a real app, you'd generate a signed URL or use a secure download endpoint
-    // For Supabase Storage, you can get a public URL or generate a signed URL
-    const supabase = createClient() // Client-side Supabase client (if you have one)
+    const supabase = createBrowserClient()
     const { data } = supabase.storage.from("documents").getPublicUrl(path)
     if (data?.publicUrl) {
       window.open(data.publicUrl, "_blank")
@@ -88,11 +87,11 @@ export function DocumentsList() {
             onChange={handleFileChange}
             ref={fileInputRef}
             className="max-w-[200px] text-sm"
-            disabled={isPending}
+            disabled={pending}
           />
-          <Button type="submit" size="sm" className="gap-1" disabled={isPending || !file}>
+          <Button type="submit" size="sm" className="gap-1" disabled={pending || !file}>
             <Upload className="h-4 w-4" />
-            {isPending ? "Uploading..." : "Upload Document"}
+            {pending ? "Uploading..." : "Upload Document"}
           </Button>
         </form>
       </CardHeader>

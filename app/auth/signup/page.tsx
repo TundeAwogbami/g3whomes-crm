@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useActionState } from "react"
+import { useFormState, useFormStatus } from "react-dom" // Correct import for useFormState and useFormStatus
 import { signUp } from "./action"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export default function SignUpPage() {
-  const [state, formAction, isPending] = useActionState(signUp, null)
+  const { pending } = useFormStatus() // Get pending status
+  const [state, formAction] = useFormState(signUp, null) // Use useFormState
+
   const router = useRouter()
 
   // Redirect to sign-in after successful signup
@@ -53,8 +55,8 @@ export default function SignUpPage() {
                 {state.message}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Signing Up..." : "Sign Up"}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Signing Up..." : "Sign Up"}
             </Button>
           </form>
           <div className="text-center text-sm text-muted-foreground">
