@@ -7,16 +7,28 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useActionState } from "react"
 import { signUp } from "./action"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 export default function SignUpPage() {
   const [state, formAction, isPending] = useActionState(signUp, null)
+  const router = useRouter()
+
+  // Redirect to sign-in after successful signup
+  useEffect(() => {
+    if (state?.success) {
+      setTimeout(() => {
+        router.push("/auth/signin")
+      }, 2000)
+    }
+  }, [state?.success, router])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Enter your details below to create your G3W Homes CRM account.</CardDescription>
+          <CardDescription>Enter your details below to create your G3W Homes portal account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form action={formAction} className="space-y-4">

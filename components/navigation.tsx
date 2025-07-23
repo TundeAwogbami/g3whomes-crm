@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Users, Building, FileText, Settings, BarChart, DollarSign, Briefcase, LinkIcon } from "lucide-react" // Renamed Link icon to LinkIcon
+import { Home, Users, Building, FileText, Settings, BarChart, DollarSign, Briefcase, LinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -13,23 +13,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react" // Import useSession
 
 export function Navigation() {
   const pathname = usePathname()
+  const { data: session } = useSession() // Get session data
+  const userRole = session?.user?.role || "guest" // Default role
 
   const navItems = [
-    { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/contacts", icon: Users, label: "Contacts" },
-    { href: "/properties", icon: Building, label: "Properties" },
-    { href: "/deals", icon: Briefcase, label: "Deals" },
-    { href: "/tasks", icon: Briefcase, label: "Tasks" },
-    { href: "/documents", icon: FileText, label: "Documents" },
-    { href: "/reports", icon: BarChart, label: "Reports" },
-    { href: "/settings", icon: Settings, label: "Settings" },
-    { href: "/financial-records", icon: DollarSign, label: "Financial Records" },
-    { href: "/staff", icon: Users, label: "Staff" },
-    { href: "/affiliates", icon: LinkIcon, label: "Affiliates" }, // Now using LinkIcon
+    { href: "/dashboard", icon: Home, label: "Dashboard", roles: ["admin", "agent", "user", "guest"] },
+    { href: "/contacts", icon: Users, label: "Contacts", roles: ["admin", "agent", "user"] },
+    { href: "/properties", icon: Building, label: "Properties", roles: ["admin", "agent", "user"] },
+    { href: "/deals", icon: Briefcase, label: "Deals", roles: ["admin", "agent", "user"] },
+    { href: "/tasks", icon: Briefcase, label: "Tasks", roles: ["admin", "agent", "user"] },
+    { href: "/documents", icon: FileText, label: "Documents", roles: ["admin", "agent", "user"] },
+    { href: "/reports", icon: BarChart, label: "Reports", roles: ["admin", "agent"] },
+    { href: "/settings", icon: Settings, label: "Settings", roles: ["admin", "agent", "user"] },
+    { href: "/financial-records", icon: DollarSign, label: "Financial Records", roles: ["admin"] }, // Admin only
+    { href: "/staff", icon: Users, label: "Staff", roles: ["admin"] }, // Admin only
+    { href: "/affiliates", icon: LinkIcon, label: "Affiliates", roles: ["admin", "agent"] },
   ]
 
   return (
@@ -42,30 +44,39 @@ export function Navigation() {
       </div>
       <nav className="flex-1 overflow-auto py-4">
         <ul className="grid items-start gap-2 px-4 text-sm font-medium lg:px-6">
-          {navItems.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
-                  pathname === item.href ? "bg-muted text-primary" : "text-muted-foreground"
-                }`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            </li>
-          ))}
+          {navItems.map((item) =>
+            item.roles.includes(userRole) ? ( // Conditionally render based on role
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
+                    pathname === item.href ? "bg-muted text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              </li>
+            ) : null,
+          )}
         </ul>
       </nav>
       <div className="mt-auto border-t p-4 lg:p-6">
         <div className="flex items-center gap-3">
           <Avatar>
             <AvatarImage src="/placeholder-user.jpg" alt="User Avatar" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback>
+              {session?.user?.name
+                ? session.user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                : "JD"}
+            </AvatarFallback>
           </Avatar>
           <div className="grid gap-0.5">
-            <div className="font-semibold">John Doe</div>
-            <div className="text-xs text-muted-foreground">Real Estate Agent</div>
+            <div className="font-semibold">{session?.user?.name || "Guest User"}</div>
+            <div className="text-xs text-muted-foreground">{session?.user?.role || "Guest"}</div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -76,6 +87,7 @@ export function Navigation() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />

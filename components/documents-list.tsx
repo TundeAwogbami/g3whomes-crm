@@ -1,58 +1,143 @@
+"use client"
+
+import type React from "react"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Upload, Download } from "lucide-react"
+import { Upload, Download, FileText } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { uploadDocument, getDocuments } from "@/app/documents/action" // Import actions
+import { useActionState } from "react"
+import { Input } from "@/components/ui/input"
+import { useSession } from "next-auth/react" // To get current user for uploadedBy
+import { createClient } from "@/app/supabase-client" // Declare the variable before using it
 
 interface Document {
   id: string
   name: string
   type: string
-  uploadedBy: string
-  uploadDate: string
+  uploaded_by: string
+  uploaded_at: string
+  storage_path: string
+  size: number
 }
 
-const documents: Document[] = [
-  { id: "1", name: "Client Agreement - John Doe", type: "PDF", uploadedBy: "John Doe", uploadDate: "2023-01-15" },
-  { id: "2", name: "Property Listing - 123 Oak St", type: "PDF", uploadedBy: "Jane Smith", uploadDate: "2023-02-20" },
-  { id: "3", name: "Financial Report Q1 2023", type: "XLSX", uploadedBy: "Admin", uploadDate: "2023-04-01" },
-]
-
 export function DocumentsList() {
+  const { data: session } = useSession()
+  const [file, setFile] = useState<File | null>(null)
+  const [fileName, setFileName] = useState<string>("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [state, formAction, isPending] = useActionState(uploadDocument, null)
+
+  useEffect(() => {
+    const fetchDocs = async () => {
+      const fetchedDocuments = await getDocuments()
+      setDocuments(fetchedDocuments)
+    }
+    fetchDocs()
+  }, [state]) // Re-fetch when upload state changes
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0]
+      setFile(selectedFile)
+      setFileName(selectedFile.name)
+    } else {
+      setFile(null)
+      setFileName("")
+    }
+  }
+
+  const handleSubmit = async (formData: FormData) => {
+    if (!file) {
+      alert("Please select a file to upload.")
+      return
+    }
+    formData.append("file", file)
+    formData.append("fileName", fileName)
+    formData.append("uploadedBy", session?.user?.name || session?.user?.email || "Unknown")
+    await formAction(formData)
+    setFile(null)
+    setFileName("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "" // Clear file input
+    }
+  }
+
+  const handleDownload = (path: string) => {
+    // In a real app, you'd generate a signed URL or use a secure download endpoint
+    // For Supabase Storage, you can get a public URL or generate a signed URL
+    const supabase = createClient() // Client-side Supabase client (if you have one)
+    const { data } = supabase.storage.from("documents").getPublicUrl(path)
+    if (data?.publicUrl) {
+      window.open(data.publicUrl, "_blank")
+    } else {
+      alert("Could not get download URL.")
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle>Documents</CardTitle>
-        <Button size="sm" className="gap-1">
-          <Upload className="h-4 w-4" />
-          Upload Document
-        </Button>
+        <form action={handleSubmit} className="flex items-center gap-2">
+          <Input
+            type="file"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+            className="max-w-[200px] text-sm"
+            disabled={isPending}
+          />
+          <Button type="submit" size="sm" className="gap-1" disabled={isPending || !file}>
+            <Upload className="h-4 w-4" />
+            {isPending ? "Uploading..." : "Upload Document"}
+          </Button>
+        </form>
       </CardHeader>
       <CardContent>
+        {state?.message && (
+          <p className={`mb-4 text-sm ${state.success ? "text-green-500" : "text-red-500"}`}>{state.message}</p>
+        )}
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Uploaded By</TableHead>
               <TableHead>Upload Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {documents.map((doc) => (
-              <TableRow key={doc.id}>
-                <TableCell className="font-medium">{doc.name}</TableCell>
-                <TableCell>{doc.type}</TableCell>
-                <TableCell>{doc.uploadedBy}</TableCell>
-                <TableCell>{doc.uploadDate}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon">
-                    <Download className="h-4 w-4" />
-                    <span className="sr-only">Download</span>
-                  </Button>
+            {documents.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  No documents uploaded yet.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              documents.map((doc) => (
+                <TableRow key={doc.id}>
+                  <TableCell className="font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    {doc.name}
+                  </TableCell>
+                  <TableCell>{doc.type.split("/").pop()}</TableCell>
+                  <TableCell>{(doc.size / 1024).toFixed(2)} KB</TableCell>
+                  <TableCell>{doc.uploaded_by}</TableCell>
+                  <TableCell>{new Date(doc.uploaded_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleDownload(doc.storage_path)}>
+                      <Download className="h-4 w-4" />
+                      <span className="sr-only">Download</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

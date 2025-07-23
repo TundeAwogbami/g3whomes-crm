@@ -1,13 +1,11 @@
 import NextAuth from "next-auth"
-import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { sql } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { createClient } from "@/lib/supabase" // Your server-side Supabase client
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -17,61 +15,62 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        try {
-          // Find user in database
-          const users = await sql`
-            SELECT * FROM users WHERE email = ${credentials.email}
-          `
+        const supabase = createClient()
 
-          if (users.length === 0) {
-            return null
-          }
+        // Sign in with Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        })
 
-          const user = users[0]
+        if (error || !data.user) {
+          console.error("Authentication error:", error?.message || "No user data")
+          throw new Error(error?.message || "Invalid credentials")
+        }
 
-          // Verify password
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+        // Fetch user role from your 'staff' table
+        const { data: staffData, error: staffError } = await supabase
+          .from("staff")
+          .select("role")
+          .eq("email", data.user.email)
+          .single()
 
-          if (!isPasswordValid) {
-            return null
-          }
+        if (staffError) {
+          console.error("Error fetching staff role:", staffError.message)
+          // Continue without role if not found, or throw error based on your policy
+        }
 
-          // Return user object
-          return {
-            id: user.id.toString(),
-            email: user.email,
-            name: `${user.first_name} ${user.last_name}`,
-            role: user.role,
-          }
-        } catch (error) {
-          console.error("Authentication error:", error)
-          return null
+        return {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata.username || data.user.email, // Use username if available
+          role: staffData?.role || "user", // Default to 'user' if no role found
         }
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
+        token.id = user.id
+        token.role = user.role // Add role to JWT
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
+        session.user.id = token.id as string
+        session.user.role = token.role as string // Add role to session
       }
       return session
     },
   },
   pages: {
     signIn: "/auth/signin",
+    signOut: "/auth/signin", // Redirect to sign-in after logout
+    error: "/auth/signin", // Error page for authentication errors
   },
-}
+  secret: process.env.NEXTAUTH_SECRET,
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

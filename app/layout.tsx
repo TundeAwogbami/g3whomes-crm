@@ -33,20 +33,6 @@ export default function RootLayout({
               <header className="flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
                 <div className="flex-1 text-lg font-semibold lg:hidden">G3W Homes CRM</div>
                 <div className="ml-auto flex items-center gap-2">
-                  {/* Add Client Button */}
-                  <Link href="/clients/add">
-                    <Button size="sm" className="h-8 gap-1">
-                      <Plus className="h-3.5 w-3.5" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Client</span>
-                    </Button>
-                  </Link>
-                  {/* Add Property Button */}
-                  <Link href="/properties/add">
-                    <Button size="sm" className="h-8 gap-1">
-                      <Plus className="h-3.5 w-3.5" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Add Property</span>
-                    </Button>
-                  </Link>
                 </div>
               </header>
               <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">{children}</main>
