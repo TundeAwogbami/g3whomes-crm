@@ -1,13 +1,20 @@
 "use server"
-import { createClient } from "@/lib/supabase" // Assuming you have a Supabase client setup in lib/supabase.ts
+import { createClient as getSupabaseServerClient } from "@/lib/supabase" // Alias the import to avoid conflicts
 
-export async function signUp(formData: FormData) {
+export async function signUp(prevState: any, formData: FormData) {
+  const username = formData.get("username") as string
   const email = formData.get("email") as string
   const password = formData.get("password") as string
-  const username = formData.get("username") as string // Assuming you want to store username
+  const confirmPassword = formData.get("confirm-password") as string
+  const role = formData.get("role") as string // Get the selected role from the form
 
-  const supabase = createClient() // Initialize Supabase client
+  if (password !== confirmPassword) {
+    return { success: false, message: "Passwords do not match." }
+  }
 
+  const supabase = getSupabaseServerClient() // Use the aliased function
+
+  // 1. Sign up the user with Supabase Auth
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -24,8 +31,17 @@ export async function signUp(formData: FormData) {
   }
 
   if (data.user) {
-    // Optionally, you might want to insert the user into a 'profiles' table here
-    // await supabase.from('profiles').insert([{ id: data.user.id, username: username, email: email }]);
+    // 2. Update the user's profile in the 'profiles' table with the selected role
+    // This is crucial for your application's RBAC
+    const { error: profileError } = await supabase.from("profiles").update({ role: role }).eq("id", data.user.id)
+
+    if (profileError) {
+      console.error("Error updating user profile role:", profileError.message)
+      // You might want to handle this more gracefully, e.g., delete the auth user
+      // if profile update fails, or log it for manual correction.
+      return { success: false, message: `Signup successful, but failed to set role: ${profileError.message}` }
+    }
+
     return { success: true, message: "Signup successful! Please check your email to confirm your account." }
   }
 

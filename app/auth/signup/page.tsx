@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useFormState, useFormStatus } from "react-dom" // Correct import for useFormState and useFormStatus
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select" // Import Select components
+import { useFormState, useFormStatus } from "react-dom"
 import { signUp } from "./action"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react" // Import useState
 
 export default function SignUpPage() {
-  const { pending } = useFormStatus() // Get pending status
-  const [state, formAction] = useFormState(signUp, null) // Use useFormState
+  const { pending } = useFormStatus()
+  const [state, formAction] = useFormState(signUp, null)
+  const [selectedRole, setSelectedRole] = useState("user") // State for selected role
 
   const router = useRouter()
 
@@ -49,6 +51,20 @@ export default function SignUpPage() {
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <Input id="confirm-password" name="confirm-password" type="password" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select name="role" value={selectedRole} onValueChange={setSelectedRole} disabled={pending}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="agent">Agent</SelectItem>
+                  <SelectItem value="affiliate">Affiliate</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {state?.message && (
               <p className={`text-sm text-center ${state.success ? "text-green-500" : "text-red-500"}`}>

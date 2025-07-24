@@ -1,31 +1,18 @@
-import { createClient } from "@supabase/supabase-js"
+"use server" // Explicitly mark this file as a Server Module
+
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables")
+// This client is for Server Actions and Route Handlers
+export async function createClient() {
+  // Made async
+  return createServerActionClient({ cookies })
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Get user data function
-export async function getUserData() {
-  const { data, error } = await supabase.from("users").select("*", { count: "exact", head: true })
-  if (error) throw error
-}
-
-// Test connection function
-export async function testSupabaseConnection() {
-  try {
-    const { data, error } = await supabase.from("users").select("count", { count: "exact", head: true })
-    if (error) throw error
-    console.log("✅ Supabase connected successfully")
-    return true
-  } catch (error) {
-    console.error("❌ Supabase connection failed:", error)
-    return false
-  }
+// This client is for client-side operations if needed (e.g., in DocumentsList for public URL)
+// Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in .env.local
+export async function createBrowserClient() {
+  // Made async
+  return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 }
