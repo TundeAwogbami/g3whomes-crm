@@ -17,9 +17,10 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
+
     async function getSession() {
       const {
         data: { session },
@@ -30,10 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getSession()
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
+      setIsLoading(false)
     })
-  }, [supabase])
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return <AuthContext.Provider value={{ session, isLoading }}>{children}</AuthContext.Provider>
 }

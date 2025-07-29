@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Home, LogIn, Mail, Lock } from "lucide-react"
 import Link from "next/link"
+import { signIn } from "./action"
 
 export default function SignInPage({
   searchParams,
@@ -83,7 +84,7 @@ export default function SignInPage({
               </div>
             )}
 
-            <form className="space-y-6">
+            <form action={signIn} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700 font-medium flex items-center gap-2">
                   <Mail className="w-4 h-4 text-orange-500" />

@@ -1,26 +1,20 @@
-import { neon } from "@neondatabase/serverless"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+console.log("🔧 Supabase Configuration:")
+console.log("URL:", supabaseUrl ? "✅ Set" : "❌ Missing")
+console.log("Key:", supabaseAnonKey ? "✅ Set" : "❌ Missing")
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("🚨 Missing Supabase environment variables!")
+  throw new Error("Missing Supabase environment variables. Please check your .env.local file.")
 }
 
-// Create a reusable SQL client
-export const sql = neon(process.env.DATABASE_URL)
-
-// Database connection test function
-export async function testConnection() {
-  try {
-    const result = await sql`SELECT NOW() as current_time`
-    console.log("Database connected successfully:", result[0].current_time)
-    return true
-  } catch (error) {
-    console.error("Database connection failed:", error)
-    return false
-  }
-}
-
-// Helper function to handle database errors
-export function handleDbError(error: any) {
-  console.error("Database error:", error)
-  throw new Error("Database operation failed")
+export function createClient() {
+  console.log("🔄 Creating Supabase client...")
+  const client = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+  console.log("✅ Supabase client created")
+  return client
 }
