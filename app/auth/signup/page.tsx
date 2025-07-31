@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Home, User, Mail, Lock, UserCheck } from "lucide-react"
+import { ArrowLeft, Home, User, Mail, Lock, UserCheck, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { signUp } from "./action"
 
@@ -81,7 +81,7 @@ export default function SignUpPage({
             {searchParams.message && (
               <div className="p-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg shadow-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                   {searchParams.message}
                 </div>
               </div>
@@ -112,8 +112,9 @@ export default function SignUpPage({
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="Create a password"
+                  placeholder="Create a password (min 6 characters)"
                   required
+                  minLength={6}
                   className="h-12 border-2 border-gray-200 focus:border-orange-500 focus:ring-orange-500 rounded-lg"
                 />
               </div>
@@ -128,10 +129,10 @@ export default function SignUpPage({
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="agent">Agent</SelectItem>
-                    <SelectItem value="affiliate">Affiliate</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="staff">Staff Member</SelectItem>
+                    <SelectItem value="agent">Real Estate Agent</SelectItem>
+                    <SelectItem value="affiliate">Affiliate Partner</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

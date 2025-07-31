@@ -1,71 +1,81 @@
 "use server"
 
-import { createServerClient } from "@/lib/supabase-server"
 import { redirect } from "next/navigation"
+import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 
 export async function signIn(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  console.log("🚀 SignIn action started")
+  console.log("🚀 Server Action SignIn started")
   console.log("📧 Email:", email)
 
   if (!email || !password) {
-    console.log("❌ Missing email or password")
     redirect("/auth/signin?error=Email and password are required")
   }
 
   try {
-    console.log("🔄 Creating Supabase client...")
-    const supabase = createServerClient()
-
-    console.log("🔄 Attempting signin...")
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: {
+        persistSession: false,
+      },
     })
 
-    console.log("📊 Signin response data:", data)
-    console.log("❌ Signin error:", error)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password: password,
+    })
+
+    console.log("📊 Server SignIn result:")
+    console.log("- User:", data.user?.id)
+    console.log("- Session:", !!data.session)
+    console.log("- Error:", error?.message)
 
     if (error) {
-      console.error("🚨 Detailed signin error:", {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-      })
-
-      if (error.message.includes("Invalid login credentials")) {
-        redirect("/auth/signin?error=Invalid email or password")
-      }
-
-      if (error.message.includes("Email not confirmed")) {
-        redirect("/auth/signin?error=Please check your email and confirm your account first")
-      }
-
+      console.error("🚨 Server SignIn error:", error)
       redirect(`/auth/signin?error=${encodeURIComponent(error.message)}`)
     }
 
     if (data.user && data.session) {
-      console.log("✅ User signed in successfully:", data.user.id)
+      console.log("✅ Server User signed in successfully!")
 
-      // Set the session cookie manually for server-side auth
+      // Get user role from metadata
+      const userRole = data.user.user_metadata?.role || "staff"
+      console.log("👤 User role:", userRole)
+
+      // Set comprehensive auth cookie
       const cookieStore = cookies()
-      cookieStore.set("supabase-auth-token", data.session.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      })
+      cookieStore.set(
+        "auth-user",
+        JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          role: userRole,
+          signedInAt: new Date().toISOString(),
+        }),
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+        },
+      )
 
+      console.log("🍪 Auth cookie set, redirecting to dashboard")
       redirect("/dashboard")
     }
 
-    console.log("⚠️ No user data returned but no error")
-    redirect("/auth/signin?error=Sign in failed. Please try again.")
+    redirect("/auth/signin?error=Sign in failed")
   } catch (error: any) {
-    console.error("🚨 Unexpected signin error:", error)
-    redirect("/auth/signin?error=Unable to sign in. Please try again.")
+    console.error("🚨 Server Unexpected error:", error)
+
+    // Check if it's a redirect error (which is actually success)
+    if (error.message?.includes("NEXT_REDIRECT")) {
+      console.log("✅ Redirect successful (this is expected)")
+      return
+    }
+
+    redirect("/auth/signin?error=Server error. Please try again.")
   }
 }
