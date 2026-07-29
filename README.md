@@ -1,36 +1,138 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# G3W Homes CRM
+
+A property management and client relationship dashboard built for G3W Homes, a Nigerian real estate company. Designed to help their team manage property listings, track leads, and follow up with clients.
+
+## Live Demo
+
+[View Live →](https://g3whomes-crm.vercel.app)
+
+## Features
+
+- **Property listings management** — add, edit, and categorise properties by type, location, and availability
+- **Lead tracking** — log new enquiries and track them through the sales pipeline
+- **Client profiles** — store contact details, interaction history, and notes per client
+- **Follow-up management** — flag clients for follow-up and track outstanding actions
+- **Authentication** — secure login powered by Supabase Auth
+- **Dashboard overview** — at-a-glance summary of active listings, open leads, and recent activity
+- **Fully responsive** — works on desktop, tablet, and mobile
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | [Next.js 14](https://nextjs.org/) (App Router) |
+| Language | [TypeScript](https://www.typescriptlang.org/) |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) |
+| Database & Auth | [Supabase](https://supabase.com/) (PostgreSQL) |
+| Deployment | [Vercel](https://vercel.com/) |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+Make sure you have these installed before continuing:
+
+- [Node.js](https://nodejs.org/) v18 or higher
+- [npm](https://npmjs.com/) or [pnpm](https://pnpm.io/)
+- A [Supabase](https://supabase.com/) account (free tier works)
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/TundeAwogbami/g3whomes-crm.git
+cd g3whomes-crm
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+# or
+pnpm install
+```
+
+### 3. Set up environment variables
+
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+Then open `.env.local` and add your Supabase credentials (see [Environment Variables](#environment-variables) below).
+
+### 4. Run the development server
 
 ```bash
 npm run dev
 # or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+Create a `.env.local` file at the root of the project. You'll find the values in your [Supabase project settings](https://app.supabase.com/) under **Project Settings → API**.
 
-To learn more about Next.js, take a look at the following resources:
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> **Never commit your `.env.local` file.** It is already listed in `.gitignore`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+g3whomes-crm/
+├── app/                  # Next.js App Router pages and layouts
+│   ├── layout.tsx        # Root layout
+│   ├── page.tsx          # Dashboard home
+│   └── globals.css       # Global styles
+├── components/           # Reusable UI components
+├── lib/                  # Supabase client and helper functions
+├── public/               # Static assets
+├── .env.example          # Environment variable template
+└── README.md
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+This project is deployed on [Vercel](https://vercel.com/). To deploy your own copy:
+
+1. Push the repo to GitHub
+2. Go to [vercel.com](https://vercel.com/) and import the repository
+3. Add your environment variables in the Vercel dashboard under **Settings → Environment Variables**
+4. Click **Deploy**
+
+Vercel auto-detects Next.js. There is no extra configuration needed.
+
+---
+
+## About G3W Homes
+
+G3W Homes is a Nigerian real estate company helping clients find and secure residential and commercial properties. This CRM was built to replace their manual tracking process and give their team a faster, more organised way to manage their business.
+
+---
+
+## Author
+
+**Tunde Awogbami** I am a Freelance Web Developer in Lagos, Nigeria
+
+- [Portfolio](https://awogbamitunde.vercel.app)
+- [GitHub](https://github.com/TundeAwogbami)
+- [LinkedIn](https://linkedin.com/in/tundeawogbami)
+
+---
+
+## License
+
+This project is private work built for a client. Not open for redistribution.
